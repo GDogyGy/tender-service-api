@@ -1,4 +1,4 @@
-package models
+package employee
 
 import (
 	"database/sql"
@@ -6,22 +6,17 @@ import (
 	"strings"
 )
 
+// Employee struct TODO: Обсудить почему теги `json:"updated_at"` = зло?
 type Employee struct {
-	Id        string `json:"id"`
-	UserName  string `json:"username"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	Id        string
+	UserName  string
+	FirstName string
+	LastName  string
+	CreatedAt string
+	UpdatedAt string
 }
 
 var employeeColumns = []string{"id", "username", "first_name", "last_name", "created_at", "updated_at"}
-
-func employeeFromRows(row *sql.Row) (*Employee, error) {
-	var t Employee
-	err := row.Scan(&t.Id, &t.UserName, &t.FirstName, &t.LastName, &t.CreatedAt, &t.UpdatedAt)
-	return &t, err
-}
 
 func GetEmployeeByID(db *sql.DB, id int) (*Employee, error) {
 	const op = "model.employee.GetEmployeeByID"
@@ -41,4 +36,10 @@ func GetEmployeeByID(db *sql.DB, id int) (*Employee, error) {
 	}
 
 	return employeeRow, nil
+}
+
+func employeeFromRows(row *sql.Row) (*Employee, error) {
+	var t Employee
+	err := row.Scan(&t.Id, &t.UserName, &t.FirstName, &t.LastName, &t.CreatedAt, &t.UpdatedAt)
+	return &t, err
 }

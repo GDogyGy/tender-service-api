@@ -1,16 +1,18 @@
 package config
 
 import (
-	"github.com/ilyakaznacheev/cleanenv"
 	"log"
 	"os"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
 	Env        string `yaml:"ENV" env:"ENV" env-default:"local" env-required:"true"`
 	HTTPServer `yaml:"HTTP_SERVER"`
 	Postgres   `yaml:"POSTGRES"`
+	DebugLevel string `yaml:"DEBUG_LEVEL" env:"DEBUG_LEVEL" env-default:"info"`
 }
 
 type HTTPServer struct {

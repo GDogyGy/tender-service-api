@@ -1,17 +1,18 @@
 package tender
 
 import (
-	"TenderServiceApi/internal/handlers"
-	"TenderServiceApi/internal/models"
-	"TenderServiceApi/internal/storage/postgres"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
+
+	"TenderServiceApi/internal/handlers"
+	"TenderServiceApi/internal/storage/postgres"
 )
 
 var _ handlers.Handler = &handler{}
 
+// handler struct TODO: вот тут убери зависимости в интерфейсы пожалуйста и напиши тесты потом
 type handler struct {
 	log     *slog.Logger
 	storage *postgres.Storage
@@ -43,7 +44,9 @@ func (h *handler) GetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	categories, err := models.GetTenderList(h.storage.Db, rq.Get(param))
+	//categories, err := GetTenderList(h.storage.Db, rq.Get(param))
+	services := tenderServices{h.log, h.storage.Db}
+	categories, err := services.GetTenderList(rq.Get(param))
 
 	if err != nil {
 		log.Error("GetTenderList error: %op" + err.Error())
