@@ -11,12 +11,17 @@ import (
 	"syscall"
 
 	"TenderServiceApi/internal/config"
+	"TenderServiceApi/internal/handlers/tender"
+	"TenderServiceApi/internal/repository"
+	"TenderServiceApi/internal/service"
 	"TenderServiceApi/internal/storage/postgres"
-	"TenderServiceApi/internal/tender"
 )
 
 func main() {
 	cfg := config.MustLoad()
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	log, err := setupLogger(cfg.DebugLevel)
 	if err != nil {
@@ -26,25 +31,26 @@ func main() {
 
 	log.Info("Starting tender api server", slog.String("Env", cfg.Env))
 
-	storage, err := postgres.New(cfg.PostgresConn)
+	storage, err := postgres.New(ctx, cfg.PostgresConn)
+	defer storage.Close()
 
 	if err != nil {
 		log.Error("Failed to init storage", slog.StringValue(err.Error()))
 		os.Exit(1)
 	}
+
 	router := http.NewServeMux()
-	//_ = storage
-	handler := tender.NewHandler(log, storage)
+	teR := repository.NewTenderRepository(storage.Db)
+	teS := service.NewTenderService(teR)
+	handler := tender.NewHandler(log, teS)
+
 	handler.Register(router)
 
-	StartServer(cfg, log, router)
+	StartServer(ctx, cfg, log, router)
 }
 
-func StartServer(cfg *config.Config, log *slog.Logger, router http.Handler) {
+func StartServer(ctx context.Context, cfg *config.Config, log *slog.Logger, router http.Handler) {
 	log.Info("server starting", slog.String("address", cfg.Address))
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	srv := &http.Server{
 		Addr:         cfg.Address,

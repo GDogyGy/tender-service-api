@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -11,7 +12,7 @@ type Storage struct {
 	Db *sql.DB
 }
 
-func New(storagePath string) (*Storage, error) {
+func New(ctx context.Context, storagePath string) (*Storage, error) {
 	const op = "storage.postgres.New"
 
 	db, err := sql.Open("postgres", storagePath)
@@ -19,7 +20,7 @@ func New(storagePath string) (*Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s:%v", op, err)
 	}
-	stmt, err := db.Prepare(`SELECT EXISTS (SELECT FROM public.tender)`)
+	stmt, err := db.PrepareContext(ctx, `SELECT EXISTS (SELECT FROM public.tender)`)
 	if err != nil {
 		return nil, fmt.Errorf("%s:%w", op, err)
 	}
@@ -29,4 +30,8 @@ func New(storagePath string) (*Storage, error) {
 	}
 
 	return &Storage{Db: db}, nil
+}
+
+func (s *Storage) Close() {
+	_ = s.Db.Close()
 }
