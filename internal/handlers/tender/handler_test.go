@@ -1,12 +1,13 @@
 package tender
 
 import (
-	"TenderServiceApi/internal/handlers/tender/mocks"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"TenderServiceApi/internal/handlers/tender/mocks"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHandleTenderFetchList(t *testing.T) {

@@ -39,10 +39,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	//empR := repository.NewEmployeeRepository(storage.Db)
-	//empS := usecase.NewEmployeeService(empR)
-	//fmt.Println(empS.GetEmployeeByID("30c2b5f4-8999-4e85-895a-26779b0e5ad6"))
-
 	router := http.NewServeMux()
 	tenderRepository := tenderRepository.NewRepository(storage.Db)
 	tenderService := tenderUseCase.NewService(tenderRepository)
