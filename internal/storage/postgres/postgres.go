@@ -2,20 +2,20 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 type Storage struct {
-	Db *sql.DB
+	Db *sqlx.DB
 }
 
 func New(ctx context.Context, storagePath string) (*Storage, error) {
 	const op = "storage.postgres.New"
 
-	db, err := sql.Open("postgres", storagePath)
+	db, err := sqlx.Connect("postgres", storagePath)
 
 	if err != nil {
 		return nil, fmt.Errorf("%s:%v", op, err)

@@ -12,9 +12,9 @@ import (
 
 	"TenderServiceApi/internal/config"
 	"TenderServiceApi/internal/handlers/tender"
-	"TenderServiceApi/internal/repository"
-	"TenderServiceApi/internal/service"
+	tenderRepository "TenderServiceApi/internal/repository/tender"
 	"TenderServiceApi/internal/storage/postgres"
+	tenderUseCase "TenderServiceApi/internal/usecase/tender"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 
 	log, err := setupLogger(cfg.DebugLevel)
 	if err != nil {
-		log.Error("Failed to init logger", slog.StringValue(err.Error()))
+		log.Error("Failed to init logger", slog.Attr{Value: slog.StringValue(err.Error())})
 		os.Exit(1)
 	}
 
@@ -35,14 +35,18 @@ func main() {
 	defer storage.Close()
 
 	if err != nil {
-		log.Error("Failed to init storage", slog.StringValue(err.Error()))
+		log.Error("Failed to init storage", slog.Attr{Value: slog.StringValue(err.Error())})
 		os.Exit(1)
 	}
 
+	//empR := repository.NewEmployeeRepository(storage.Db)
+	//empS := usecase.NewEmployeeService(empR)
+	//fmt.Println(empS.GetEmployeeByID("30c2b5f4-8999-4e85-895a-26779b0e5ad6"))
+
 	router := http.NewServeMux()
-	teR := repository.NewTenderRepository(storage.Db)
-	teS := service.NewTenderService(teR)
-	handler := tender.NewHandler(log, teS)
+	tenderRepository := tenderRepository.NewRepository(storage.Db)
+	tenderService := tenderUseCase.NewService(tenderRepository)
+	handler := tender.NewHandler(log, tenderService)
 
 	handler.Register(router)
 
@@ -61,15 +65,15 @@ func StartServer(ctx context.Context, cfg *config.Config, log *slog.Logger, rout
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("listen and serve returned err:", err)
+			log.Error("listen and serve returned err:", slog.Attr{Value: slog.StringValue(err.Error())})
 		}
 	}()
 
 	<-ctx.Done()
 
 	log.Info("got interruption signal")
-	if err := srv.Shutdown(context.TODO()); err != nil {
-		log.Info("server shutdown returned an err: %v\n", err)
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Info("server shutdown returned an err: %v\n", slog.Attr{Value: slog.StringValue(err.Error())})
 	}
 
 	log.Info("final")

@@ -1,19 +1,25 @@
 package tender
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"TenderServiceApi/internal/model"
 )
 
+// TODO: генерирует не экспортируемый мок (приходится переписывать)
+//
+//go:generate mockery --dir=./ --name=log
 type log interface {
 	Error(msg string, args ...any)
-	//With(args ...any) log // TODO тут не получилось сделать не импортируемым: обсудить. При *log не считается что удовлетворяет With(args ...any) *Logger
 }
 
+// TODO: генерирует не экспортируемый мок (приходится переписывать) Спросить, как тут быть
+//
+//go:generate mockery --dir=./ --name=service
 type service interface {
-	GetTenderList(serviceType string) ([]model.Tender, error)
+	FetchList(ctx context.Context, serviceType string) ([]model.Tender, error)
 }
 
 type Handler struct {
@@ -28,15 +34,19 @@ func NewHandler(l log, s service) Handler {
 }
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodGet+" /api/tender", h.GetList)
-	router.HandleFunc(http.MethodGet+" /api/tender/my", h.GetList)
-	router.HandleFunc(http.MethodGet+" /api/tender/new", h.Create)
+	router.HandleFunc(http.MethodGet+" /api/tenders", h.FetchList)
+	router.HandleFunc(http.MethodGet+" /api/tenders/my", h.FetchList)
+	router.HandleFunc(http.MethodGet+" /api/tenders/new", h.Create)
 }
 
-func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FetchList(w http.ResponseWriter, r *http.Request) {
 	//log := h.log.With( // TODO: обсудить как сделать или как в таких случаях делают
 	//	[]string{"op", "handlers.tender.GetList"},
 	//)
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	rq := r.URL.Query()
 
 	param := "servicetype"
@@ -46,7 +56,7 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	categories, err := h.service.GetTenderList(rq.Get(param))
+	categories, err := h.service.FetchList(r.Context(), rq.Get(param))
 
 	if err != nil {
 		h.log.Error("GetTenderList error: %op" + err.Error())

@@ -1,4 +1,4 @@
-package service
+package employee
 
 import "TenderServiceApi/internal/model"
 
