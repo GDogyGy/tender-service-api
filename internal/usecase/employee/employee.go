@@ -1,19 +1,23 @@
 package employee
 
-import "TenderServiceApi/internal/model"
+import (
+	"context"
 
-type EmployeeService struct {
-	EmployeeRepository EmployeeRepository
+	"TenderServiceApi/internal/model"
+)
+
+type Service struct {
+	employee Repository
 }
 
-type EmployeeRepository interface {
-	GetEmployeeByID(id string) (model.Employee, error)
+type Repository interface {
+	FetchById(ctx context.Context, id string) (model.Employee, error)
 }
 
-func NewEmployeeService(EmployeeRepository EmployeeRepository) *EmployeeService {
-	return &EmployeeService{EmployeeRepository: EmployeeRepository}
+func NewService(r Repository) *Service {
+	return &Service{employee: r}
 }
 
-func (s *EmployeeService) GetEmployeeByID(id string) (model.Employee, error) {
-	return s.EmployeeRepository.GetEmployeeByID(id)
+func (s *Service) FetchById(ctx context.Context, id string) (model.Employee, error) {
+	return s.employee.FetchById(ctx, id)
 }

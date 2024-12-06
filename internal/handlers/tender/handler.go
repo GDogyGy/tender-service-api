@@ -20,6 +20,7 @@ type log interface {
 //go:generate mockery --dir=./ --name=service
 type service interface {
 	FetchList(ctx context.Context, serviceType string) ([]model.Tender, error)
+	FetchListByUser(ctx context.Context, username string) ([]model.Tender, error)
 }
 
 type Handler struct {
@@ -35,7 +36,7 @@ func NewHandler(l log, s service) Handler {
 
 func (h *Handler) Register(router *http.ServeMux) {
 	router.HandleFunc(http.MethodGet+" /api/tenders", h.FetchList)
-	router.HandleFunc(http.MethodGet+" /api/tenders/my", h.FetchList)
+	router.HandleFunc(http.MethodGet+" /api/tenders/my", h.FetchListByUser)
 	router.HandleFunc(http.MethodGet+" /api/tenders/new", h.Create)
 }
 
@@ -72,6 +73,45 @@ func (h *Handler) FetchList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(categories) > 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Write(b)
+		return
+	}
+
+	w.WriteHeader(http.StatusNotFound)
+	return
+}
+
+func (h *Handler) FetchListByUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	rq := r.URL.Query()
+
+	param := "username"
+
+	if len(rq) > 1 || len(rq) == 1 && rq.Get(param) == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tenders, err := h.service.FetchListByUser(r.Context(), rq.Get(param))
+
+	if err != nil {
+		h.log.Error("GetTenderList error: %op" + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(tenders)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(tenders) > 0 {
 		w.WriteHeader(http.StatusOK)
 		w.Write(b)
 		return
