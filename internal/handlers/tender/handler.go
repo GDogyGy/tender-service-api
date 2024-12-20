@@ -197,14 +197,6 @@ func (h *Handler) CreateTender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: тут прежде нужно проверить user принадлежит ли организации и составить DTO с responsible для tenders и сохранить
-	//_, _, err := h.organizationResponsibleFacade.Fetch(r.Context(), b)
-	//
-	//if err != nil {
-	//	h.log.Error(err.Error())
-	//	w.WriteHeader(http.StatusBadRequest)
-	//	return
-	//}
 	organizationResponsible, err := h.organizationResponsibleFacade.Fetch(r.Context(), b)
 	if err != nil {
 		h.log.Error(err.Error())

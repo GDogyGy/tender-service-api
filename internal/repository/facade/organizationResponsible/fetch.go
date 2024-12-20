@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -62,7 +63,7 @@ func (o *OrganizationResponsible) Fetch(ctx context.Context, args []byte) (model
 	if err != nil {
 		return result, err
 	}
-	
+
 	// TODO в тз нужно уточнить об organizationId  {
 	//
 	//    "name": "Тендер 1",
