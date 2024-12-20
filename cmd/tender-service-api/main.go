@@ -1,6 +1,7 @@
 package main
 
 import (
+	"TenderServiceApi/internal/repository/facade/organizationResponsible"
 	"context"
 	"errors"
 	"fmt"
@@ -29,7 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Starting tender api server", slog.String("Env", cfg.Env))
+	log.Info("Starting organizationResponsible api server", slog.String("Env", cfg.Env))
 
 	storage, err := postgres.New(ctx, cfg.PostgresConn)
 	defer storage.Close()
@@ -40,9 +41,11 @@ func main() {
 	}
 
 	router := http.NewServeMux()
+	organizationResponsibleFacade := organizationResponsible.NewOrganizationResponsibleFacade(storage.Db)
+
 	tenderRepository := tenderRepository.NewRepository(storage.Db)
 	tenderService := tenderUseCase.NewService(tenderRepository)
-	handler := tender.NewHandler(log, tenderService)
+	handler := tender.NewHandler(log, tenderService, organizationResponsibleFacade)
 
 	handler.Register(router)
 

@@ -26,30 +26,53 @@ func (e *Repository) FetchById(ctx context.Context, id string) (model.Employee, 
 		return employee, fmt.Errorf("%s:%s", op, "Parametr id is empty")
 	}
 
-	r := e.db.QueryRowx(fmt.Sprintf(`SELECT %s FROM employee WHERE id = $1`, strings.Join(emC, ", ")), id)
+	r := e.db.QueryRowx(fmt.Sprintf(`SELECT %s FROM employee WHERE id = $1`, strings.Join(column, ", ")), id)
 
-	employeeRow, err := e.employeeFromRow(r)
+	employeeRow, err := e.fromRow(r)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return employee, fmt.Errorf("%s:%w", op, err)
+	}
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return employee, fmt.Errorf("%s:%w", op, err)
-		}
 		return employee, err
 	}
 
 	return employeeRow, nil
 }
 
-var emC = []string{"id", "username", "first_name", "last_name", "created_at", "updated_at"}
+func (e *Repository) FetchByUserName(ctx context.Context, username string) (model.Employee, error) {
+	const op = "repository.employee.FetchByUserName"
+	var employee model.Employee
+	if len(username) <= 0 {
+		return employee, fmt.Errorf("%s:%s", op, "Parametr id is empty")
+	}
 
-func (e *Repository) employeeFromRows(rows *sqlx.Rows) (model.Employee, error) {
+	r := e.db.QueryRowx(fmt.Sprintf(`SELECT %s FROM employee WHERE username = $1`, strings.Join(column, ", ")), username)
+
+	employeeRow, err := e.fromRow(r)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return employee, fmt.Errorf("%s:%w", op, err)
+	}
+
+	if err != nil {
+		return employee, err
+	}
+
+	return employeeRow, nil
+}
+
+var column = []string{"id", "username", "first_name", "last_name", "created_at", "updated_at"}
+
+func (e *Repository) fromRows(rows *sqlx.Rows) (model.Employee, error) {
 	var r row
 	err := rows.StructScan(&r)
 	m := r.toModel()
 	return m, err
 }
 
-func (e *Repository) employeeFromRow(ro *sqlx.Row) (model.Employee, error) {
+func (e *Repository) fromRow(ro *sqlx.Row) (model.Employee, error) {
 	var r row
 	err := ro.StructScan(&r)
 	m := r.toModel()

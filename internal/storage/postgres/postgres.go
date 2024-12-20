@@ -20,7 +20,7 @@ func New(ctx context.Context, storagePath string) (*Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s:%v", op, err)
 	}
-	stmt, err := db.PrepareContext(ctx, `SELECT EXISTS (SELECT FROM public.tender)`)
+	stmt, err := db.PrepareContext(ctx, `SELECT EXISTS (SELECT FROM public.organization_responsible)`)
 	if err != nil {
 		return nil, fmt.Errorf("%s:%w", op, err)
 	}
