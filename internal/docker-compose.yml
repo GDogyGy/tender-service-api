@@ -6,18 +6,33 @@ services:
   db:
     image: postgres:latest
     restart: always
-    container_name: tender_service_api_db
+    container_name: db
     environment:
       - POSTGRES_USER=${POSTGRES_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DATABASE}
-      - DATABASE_HOST=$}
+      - DATABASE_HOST=${POSTGRES_HOST}
     ports:
       - '${POSTGRES_PORT}:${POSTGRES_PORT}'
     volumes:
       - db:/var/lib/postgresql/data
     networks:
       - backend
+#  db_test:
+#    image: postgres:latest
+#    restart: always
+#    container_name: db_test
+#    environment:
+#      - POSTGRES_USER=${POSTGRES_USERNAME}
+#      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#      - POSTGRES_DB=${POSTGRES_DATABASE_TEST}
+#      - DATABASE_HOST=${POSTGRES_HOST}
+#    ports:
+#      - '50434:50430'
+#    volumes:
+#      - db:/var/lib/postgresql/data_test
+#    networks:
+#      - backend
 networks:
   backend:
     driver: bridge

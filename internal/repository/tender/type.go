@@ -10,14 +10,16 @@ type row struct {
 	Description string `db:"description"`
 	ServiceType string `db:"service_type"`
 	Status      string `db:"status"`
+	Version     int    `db:"version"`
 	Responsible string `db:"responsible"`
 }
 
-type createDTO struct {
+type tenderDTO struct {
 	Name            string `db:"name"`
 	Description     string `db:"description"`
 	ServiceType     string `db:"serviceType"`
 	Status          string `db:"status"`
+	Version         int    `db:"version"`
 	OrganizationId  string `db:"organizationId"`
 	CreatorUsername string `db:"creatorUsername"`
 }
@@ -29,6 +31,7 @@ func (r *row) toModel() model.Tender {
 		Description: r.Description,
 		ServiceType: r.ServiceType,
 		Status:      r.Status,
+		Version:     r.Version,
 		Responsible: r.Responsible,
 	}
 }
@@ -39,6 +42,7 @@ func toRow(m model.Tender) row {
 		Description: m.Description,
 		ServiceType: m.ServiceType,
 		Status:      m.Status,
+		Version:     m.Version,
 		Responsible: m.Responsible,
 	}
 }

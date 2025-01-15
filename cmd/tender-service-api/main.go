@@ -1,7 +1,7 @@
 package main
 
 import (
-	"TenderServiceApi/internal/repository/facade/organizationResponsible"
+	"TenderServiceApi/internal/repository/organization"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,6 @@ import (
 	"TenderServiceApi/internal/handlers/tender"
 	tenderRepository "TenderServiceApi/internal/repository/tender"
 	"TenderServiceApi/internal/storage/postgres"
-	tenderUseCase "TenderServiceApi/internal/usecase/tender"
 )
 
 func main() {
@@ -41,11 +40,10 @@ func main() {
 	}
 
 	router := http.NewServeMux()
-	organizationResponsibleFacade := organizationResponsible.NewOrganizationResponsibleFacade(storage.Db)
 
-	tenderRepository := tenderRepository.NewRepository(storage.Db)
-	tenderService := tenderUseCase.NewService(tenderRepository)
-	handler := tender.NewHandler(log, tenderService, organizationResponsibleFacade)
+	tenderService := tenderRepository.NewRepository(storage.Db)
+	organizationService := organization.NewRepository(storage.Db)
+	handler := tender.NewHandler(log, tenderService, organizationService)
 
 	handler.Register(router)
 
