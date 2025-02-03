@@ -22,7 +22,7 @@ func NewRepository(db *sqlx.DB) *Repository {
 func (e *Repository) FetchById(ctx context.Context, id string) (model.Employee, error) {
 	const op = "repository.employee.FetchById"
 	var employee model.Employee
-	if len(id) <= 0 {
+	if len(id) == 0 {
 		return employee, fmt.Errorf("%s:%s", op, "Parametr id is empty")
 	}
 
@@ -44,7 +44,7 @@ func (e *Repository) FetchById(ctx context.Context, id string) (model.Employee, 
 func (e *Repository) FetchByUserName(ctx context.Context, username string) (model.Employee, error) {
 	const op = "repository.employee.FetchByUserName"
 	var employee model.Employee
-	if len(username) <= 0 {
+	if len(username) == 0 {
 		return employee, fmt.Errorf("%s:%s", op, "Parametr id is empty")
 	}
 
@@ -64,13 +64,6 @@ func (e *Repository) FetchByUserName(ctx context.Context, username string) (mode
 }
 
 var column = []string{"id", "username", "first_name", "last_name", "created_at", "updated_at"}
-
-func (e *Repository) fromRows(rows *sqlx.Rows) (model.Employee, error) {
-	var r row
-	err := rows.StructScan(&r)
-	m := r.toModel()
-	return m, err
-}
 
 func (e *Repository) fromRow(ro *sqlx.Row) (model.Employee, error) {
 	var r row

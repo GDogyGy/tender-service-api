@@ -3,7 +3,6 @@
 package test
 
 import (
-	"TenderServiceApi/internal/handlers/tender"
 	"bytes"
 	"net/http"
 	"net/http/httptest"

@@ -5,7 +5,7 @@ CREATE
     EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE tender
 (
-    id           UUID PRIMARY KEY       DEFAULT uuid_generate_v4(),
+    id           UUID                   DEFAULT uuid_generate_v4(),
     name         VARCHAR(100)  NOT NULL,
     description  TEXT          NOT NULL,
     service_type VARCHAR(200)  NOT NULL,

@@ -26,14 +26,6 @@ func (r *organizationRow) toModel() model.Organization {
 	}
 }
 
-func toRow(m model.Organization) organizationRow {
-	return organizationRow{
-		Name:        m.Name,
-		Description: m.Description,
-		Type:        m.Type,
-	}
-}
-
 func (o *organizationResponsibleRow) toModel() model.OrganizationResponsible {
 	return model.OrganizationResponsible{
 		Id:             o.Id,

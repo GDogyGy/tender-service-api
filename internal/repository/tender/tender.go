@@ -28,12 +28,12 @@ func (t *Repository) FetchList(ctx context.Context, serviceType string) ([]model
 
 	if len(serviceType) > 0 {
 		arg := pq.Array(strings.Split(serviceType, ","))
-		q := fmt.Sprintf(`SELECT %s FROM tender WHERE tender.service_type = ANY ($1)`, strings.Join(column, ","))
+		q := fmt.Sprintf(`SELECT %s FROM tender WHERE version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id and t2.status = 'PUBLISHED' and t2.service_type = ANY ($1))`, strings.Join(column, ","))
 		rows, err = t.db.QueryxContext(ctx, q, arg)
 	}
 
 	if len(serviceType) == 0 {
-		q := fmt.Sprintf(`SELECT %s FROM tender`, strings.Join(column, ","))
+		q := fmt.Sprintf("SELECT %s FROM tender WHERE version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id and t2.status = 'PUBLISHED')", strings.Join(column, ","))
 		rows, err = t.db.QueryxContext(ctx, q)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
@@ -61,13 +61,11 @@ func (t *Repository) FetchListByUser(ctx context.Context, username string) ([]mo
 	var rows *sqlx.Rows
 	var err error
 
-	q := fmt.Sprintf(`SELECT %s FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1`, strings.Join(column, ","))
+	q := fmt.Sprintf(`SELECT %s FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, strings.Join(column, ","))
 	rows, err = t.db.QueryxContext(ctx, q, username)
-
 	if errors.Is(err, sql.ErrNoRows) {
 		return tenders, model.NotFound
 	}
-
 	if err != nil {
 		return tenders, fmt.Errorf("%s: %w", op, err)
 	}
@@ -85,7 +83,7 @@ func (t *Repository) FetchListByUser(ctx context.Context, username string) ([]mo
 
 func (t *Repository) CheckResponsible(ctx context.Context, username string, tenderId string) (bool, error) {
 	const op = "repository.tender.CheckResponsible"
-	tender := t.db.QueryRowxContext(ctx, `SELECT COUNT(*) FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 AND tender.id = $2`, username, tenderId)
+	tender := t.db.QueryRowxContext(ctx, `SELECT COUNT(*) FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 AND tender.id = $2 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, username, tenderId)
 
 	err := tender.Err()
 
@@ -113,9 +111,8 @@ func (t *Repository) CheckResponsible(ctx context.Context, username string, tend
 func (t *Repository) FetchById(ctx context.Context, tenderId string) (model.Tender, error) {
 	const op = "repository.tender.FetchById"
 
-	q := fmt.Sprintf(`SELECT %s FROM tender WHERE tender.id = $1`, strings.Join(column, ","))
+	q := fmt.Sprintf(`SELECT %s FROM tender WHERE tender.id = $1 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, strings.Join(column, ","))
 	tender := t.db.QueryRowxContext(ctx, q, tenderId)
-
 	err := tender.Err()
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -141,9 +138,8 @@ func (t *Repository) FetchById(ctx context.Context, tenderId string) (model.Tend
 
 func (t *Repository) Create(ctx context.Context, saveModel model.Tender) (model.Tender, error) {
 	const op = "repository.tender.Create"
-	var r row
 
-	r = toRow(saveModel)
+	r := toRow(saveModel)
 
 	q := "INSERT INTO tender (name, description, service_type, status, responsible) VALUES($1,$2,$3,$4,$5) RETURNING id"
 
@@ -167,40 +163,51 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Tender) (model.
 }
 
 func (t *Repository) Edite(ctx context.Context, tenderNew model.Tender, tender model.Tender) (model.Tender, error) {
-	// TODO: возможно тут транзакция нужна
 	const op = "repository.tender.Edite"
 	var r row
-	// TODO: простейшая операция не работает why?!! пришлось не явно r.Version+1, $5 + 1 делать повышение версии
 	tenderNew.Version = tender.Version + 1
 
 	r = toRow(tenderNew)
-	q := fmt.Sprintf("UPDATE tender set (name, description, service_type, status, version, responsible) = ($1,$2,$3,$4,$5,$6) WHERE id= '%s'", tenderNew.Id)
-
-	result := t.db.QueryRowxContext(ctx, q, r.Name, r.Description, r.ServiceType, r.Status, r.Version, r.Responsible)
-
-	err := result.Err()
-
+	q := `INSERT INTO tender (id, name, description, service_type, status, version, responsible) VALUES ($1,$2,$3,$4,$5,$6,$7)`
+	result, err := t.db.QueryxContext(ctx, q, r.Id, r.Name, r.Description, r.ServiceType, r.Status, r.Version, r.Responsible)
 	if err != nil {
 		return model.Tender{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	// TODO: Класть json в таблицу и увеличивать версию через update
-	q = "INSERT INTO tender_history (tender_id, data) VALUES ($1, $2)"
-	result = t.db.QueryRowxContext(ctx, q, tender.Id, tender)
-
-	err = result.Err()
-
+	err = result.Close()
 	if err != nil {
-		return model.Tender{}, fmt.Errorf("Text %s: %w", op, err)
+		return model.Tender{}, fmt.Errorf("%s: %w", op, err)
 	}
+
 	return tenderNew, nil
 }
 
-//func (t *Repository) Rollback(ctx context.Context, tenderDTO createDTO, tender model.Tender) (model.Tender, error) {
-//	const op = "repository.tender.Rollback"
-// TODO: Откат до версии и обновление записи в tender
-//	return tender, nil
-//}
+func (t *Repository) Rollback(ctx context.Context, id string, version string) (model.Tender, error) {
+	const op = "repository.tender.Rollback"
+
+	q := `INSERT INTO tender (id, name, description, service_type, status,version,responsible) SELECT id, name, description, service_type, status, (SELECT version + 1 FROM tender WHERE tender.id = $1 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)) as version, responsible FROM tender WHERE id = $1 and version = $2 RETURNING id`
+	tender := t.db.QueryRowxContext(ctx, q, id, version)
+	err := tender.Err()
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Tender{}, model.NotFound
+	}
+	if err != nil {
+		return model.Tender{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var tenderId string
+	err = tender.Scan(&tenderId)
+	if err != nil {
+		return model.Tender{}, model.NotFound
+	}
+
+	resp, err := t.FetchById(ctx, tenderId)
+	if err != nil {
+		return model.Tender{}, model.NotFound
+	}
+
+	return resp, nil
+}
 
 var column = []string{"tender.id", "tender.name", "tender.description", "tender.service_type", "tender.status", "tender.version", "tender.responsible"}
 

@@ -16,9 +16,8 @@ func New(ctx context.Context, storagePath string) (*Storage, error) {
 	const op = "storage.postgres.New"
 
 	db, err := sqlx.Connect("postgres", storagePath)
-
 	if err != nil {
-		return nil, fmt.Errorf("%s:%v", op, err)
+		return nil, fmt.Errorf("%s:%v", op, storagePath)
 	}
 	stmt, err := db.PrepareContext(ctx, `SELECT EXISTS (SELECT FROM public.organization_responsible)`)
 	if err != nil {

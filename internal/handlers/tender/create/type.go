@@ -1,4 +1,4 @@
-package tender
+package create
 
 type tenderDTO struct {
 	Id          string `json:"id"`
@@ -6,10 +6,10 @@ type tenderDTO struct {
 	Description string `json:"description"`
 	ServiceType string `json:"service_type"`
 	Status      string `json:"status"`
+	Version     int    `json:"version"`
 	Responsible string `json:"responsible"`
 }
 
-// TODO валидно ли тут и так хранить?
 type argCreatTender struct {
 	Username       string `json:"creatorUsername"`
 	OrganizationId string `json:"organizationId"`

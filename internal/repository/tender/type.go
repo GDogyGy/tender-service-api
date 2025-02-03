@@ -14,16 +14,6 @@ type row struct {
 	Responsible string `db:"responsible"`
 }
 
-type tenderDTO struct {
-	Name            string `db:"name"`
-	Description     string `db:"description"`
-	ServiceType     string `db:"serviceType"`
-	Status          string `db:"status"`
-	Version         int    `db:"version"`
-	OrganizationId  string `db:"organizationId"`
-	CreatorUsername string `db:"creatorUsername"`
-}
-
 func (r *row) toModel() model.Tender {
 	return model.Tender{
 		Id:          r.Id,
@@ -38,6 +28,7 @@ func (r *row) toModel() model.Tender {
 
 func toRow(m model.Tender) row {
 	return row{
+		Id:          m.Id,
 		Name:        m.Name,
 		Description: m.Description,
 		ServiceType: m.ServiceType,

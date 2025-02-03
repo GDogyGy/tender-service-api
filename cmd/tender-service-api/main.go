@@ -1,7 +1,6 @@
 package main
 
 import (
-	"TenderServiceApi/internal/repository/organization"
 	"context"
 	"errors"
 	"fmt"
@@ -12,9 +11,18 @@ import (
 	"syscall"
 
 	"TenderServiceApi/internal/config"
-	"TenderServiceApi/internal/handlers/tender"
+	tenderCreate "TenderServiceApi/internal/handlers/tender/create"
+	tenderFetch "TenderServiceApi/internal/handlers/tender/fetch"
+	tenderUpdate "TenderServiceApi/internal/handlers/tender/update"
+	"TenderServiceApi/internal/repository/organization"
 	tenderRepository "TenderServiceApi/internal/repository/tender"
 	"TenderServiceApi/internal/storage/postgres"
+	organizationUseCaseFetch "TenderServiceApi/internal/usecases/organization/fetch"
+	organizationUseCaseVerify "TenderServiceApi/internal/usecases/organization/verification"
+	tenderUseCaseCreate "TenderServiceApi/internal/usecases/tender/create"
+	tenderUseCaseEdite "TenderServiceApi/internal/usecases/tender/edite"
+	tenderUseCaseFetch "TenderServiceApi/internal/usecases/tender/fetch"
+	tenderUseCaseVerify "TenderServiceApi/internal/usecases/tender/verification"
 )
 
 func main() {
@@ -23,29 +31,41 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// TODO: Тут не удалось победить линтер пришлось через nolint:gocritic решать ошибку
 	log, err := setupLogger(cfg.DebugLevel)
 	if err != nil {
 		log.Error("Failed to init logger", slog.Attr{Value: slog.StringValue(err.Error())})
-		os.Exit(1)
+		os.Exit(1) // nolint:gocritic
 	}
 
 	log.Info("Starting organizationResponsible api server", slog.String("Env", cfg.Env))
 
 	storage, err := postgres.New(ctx, cfg.PostgresConn)
-	defer storage.Close()
-
 	if err != nil {
 		log.Error("Failed to init storage", slog.Attr{Value: slog.StringValue(err.Error())})
-		os.Exit(1)
+		os.Exit(1) // nolint:gocritic
 	}
+
+	defer storage.Close()
 
 	router := http.NewServeMux()
 
-	tenderService := tenderRepository.NewRepository(storage.Db)
-	organizationService := organization.NewRepository(storage.Db)
-	handler := tender.NewHandler(log, tenderService, organizationService)
+	tenderRepository := tenderRepository.NewRepository(storage.Db)
+	organizationRepository := organization.NewRepository(storage.Db)
 
-	handler.Register(router)
+	useCaseTenderVerify := tenderUseCaseVerify.NewService(tenderRepository)
+	useCaseOrganizationVerify := organizationUseCaseVerify.NewService(organizationRepository)
+	useCaseOrganizationFetch := organizationUseCaseFetch.NewService(organizationRepository)
+	useCaseTenderFetch := tenderUseCaseFetch.NewService(tenderRepository, useCaseTenderVerify)
+	useCaseTenderEdite := tenderUseCaseEdite.NewService(tenderRepository, useCaseOrganizationVerify, useCaseOrganizationFetch)
+	tenderUseCaseCreate := tenderUseCaseCreate.NewService(tenderRepository, useCaseOrganizationVerify)
+
+	handlerFetch := tenderFetch.NewHandler(log, useCaseTenderFetch)
+	handlerCreate := tenderCreate.NewHandler(log, tenderUseCaseCreate)
+	handlerUpdate := tenderUpdate.NewHandler(log, useCaseTenderEdite)
+	handlerFetch.Register(router)
+	handlerCreate.Register(router)
+	handlerUpdate.Register(router)
 
 	StartServer(ctx, cfg, log, router)
 }
