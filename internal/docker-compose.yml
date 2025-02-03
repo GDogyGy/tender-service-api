@@ -30,9 +30,9 @@ services:
       - POSTGRES_DATABASE=${POSTGRES_DATABASE}
       - POSTGRES_PASSWORD=123
       - POSTGRES_DB=TenderApi
-      - POSTGRES_CONN=postgres://root:123@localhost:5431/TenderApi?sslmode=disable
+      - POSTGRES_CONN=postgres://root:123@localhost:5434/TenderApi?sslmode=disable
       - POSTGRES_USER=root
-      - POSTGRES_PORT=5431
+      - POSTGRES_PORT=5434
     ports:
       - '${APP_TEST_PORT}:${APP_TEST_PORT}'
     depends_on:
