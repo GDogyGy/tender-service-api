@@ -30,7 +30,7 @@ services:
       - POSTGRES_DATABASE=${POSTGRES_DATABASE}
       - POSTGRES_PASSWORD=123
       - POSTGRES_DB=TenderApi
-      - POSTGRES_CONN=postgres://root:123@localhost:5434/TenderApi?sslmode=disable
+      - POSTGRES_CONN=postgres://root:123@localhost:5434/TenderApiTest?sslmode=disable
       - POSTGRES_USER=root
       - POSTGRES_PORT=5434
     ports:
