@@ -21,6 +21,7 @@ type log interface {
 type useCaseTenderEdite interface {
 	Edite(ctx context.Context, id string, username string, tenderNew model.Tender) (model.Tender, error)
 	Rollback(ctx context.Context, id string, username string, version string) (model.Tender, error)
+	Status(ctx context.Context, username string, tenderId string, status string) (model.Tender, error)
 }
 
 type Handler struct {
@@ -41,6 +42,7 @@ func NewHandler(l log, t useCaseTenderEdite) Handler {
 func (h *Handler) Register(router *http.ServeMux) {
 	router.HandleFunc(http.MethodPatch+" /api/tenders/{id}/edit", h.Edite)
 	router.HandleFunc(http.MethodPut+" /api/tenders/{id}/rollback/{version}", h.Rollback)
+	router.HandleFunc(http.MethodPut+" /api/tenders/status", h.Status)
 }
 
 // Edite TODO: Почему в две базы кладем? потому что Тендеры могут создавать только пользователи от имени своей организации. А этих тендеров может быть несколько от одного человека и как понять какой тендер откатывать а какой не трогать?
@@ -138,8 +140,8 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tender, err := h.tenderEdite.Rollback(r.Context(), id[1], rq.Get(user), version[1])
-	// TODO: Валидно так? errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsibleTender)
-	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsibleTender) {
+	// TODO: Валидно так? errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsible)
+	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsible) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -153,6 +155,56 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 	tDTO := tenderDTO{tender.Id, tender.Name, tender.Description, tender.ServiceType, tender.Status, tender.Version, tender.Responsible}
 	b, err := json.Marshal(tDTO)
 
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	rq := r.URL.Query()
+	user := "username"
+	tenderId := "tenderId"
+	status := "status"
+
+	if len(rq) > 3 || rq.Get(user) == "" || rq.Get(tenderId) == "" || rq.Get(status) == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tender, err := h.tenderEdite.Status(r.Context(), rq.Get(user), rq.Get(tenderId), rq.Get(status))
+	if errors.Is(err, model.NotFindResponsible) {
+		h.log.Error("FetchTenderStatus error: " + err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		h.log.Error("FetchTenderStatus error: " + err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if err != nil {
+		h.log.Error("FetchTenderStatus error: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(tender)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

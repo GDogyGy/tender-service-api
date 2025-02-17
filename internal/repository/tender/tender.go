@@ -105,7 +105,7 @@ func (t *Repository) CheckResponsible(ctx context.Context, username string, tend
 	if c > 0 {
 		return true, nil
 	}
-	return false, model.NotFindResponsibleTender
+	return false, model.NotFindResponsible
 }
 
 func (t *Repository) FetchById(ctx context.Context, tenderId string) (model.Tender, error) {
@@ -199,6 +199,28 @@ func (t *Repository) Rollback(ctx context.Context, id string, version string) (m
 	err = tender.Scan(&tenderId)
 	if err != nil {
 		return model.Tender{}, model.NotFound
+	}
+
+	resp, err := t.FetchById(ctx, tenderId)
+	if err != nil {
+		return model.Tender{}, model.NotFound
+	}
+
+	return resp, nil
+}
+
+func (t *Repository) UpdateStatus(ctx context.Context, tenderId string, status string) (model.Tender, error) {
+	const op = "repository.tender.UpdateStatus"
+
+	q := `UPDATE tender SET status = $1 WHERE id = $2`
+	result, err := t.db.QueryxContext(ctx, q, status, tenderId)
+	if err != nil {
+		return model.Tender{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = result.Close()
+	if err != nil {
+		return model.Tender{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	resp, err := t.FetchById(ctx, tenderId)

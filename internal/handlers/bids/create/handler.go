@@ -15,23 +15,23 @@ type log interface {
 	Error(msg string, args ...any)
 }
 
-type useCasesTenderCreate interface {
-	Create(ctx context.Context, creatorUsername string, organizationId string, saveModel model.Tender) (model.Tender, error)
+type useCaseBidsCreate interface {
+	Create(ctx context.Context, creatorUsername string, organizationId string, saveModel model.Bids) (model.Bids, error)
 }
 
 type Handler struct {
-	log                  log
-	useCasesTenderCreate useCasesTenderCreate
+	log               log
+	useCaseBidsCreate useCaseBidsCreate
 }
 
-func NewHandler(l log, useCasesTenderCreate useCasesTenderCreate) Handler {
+func NewHandler(l log, useCaseBidsCreate useCaseBidsCreate) Handler {
 	return Handler{
-		l, useCasesTenderCreate,
+		l, useCaseBidsCreate,
 	}
 }
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodPost+" /api/tenders/new", h.Create)
+	router.HandleFunc(http.MethodPost+" /api/bids/new", h.Create)
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var args argCreatTender
+	var args argCreatBids
 	err = json.Unmarshal(b, &args)
 	if err != nil {
 		h.log.Error(err.Error())
@@ -59,15 +59,15 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tenderCreate model.Tender
-	err = json.Unmarshal(b, &tenderCreate)
+	var bidsCreate model.Bids
+	err = json.Unmarshal(b, &bidsCreate)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resp, err := h.useCasesTenderCreate.Create(r.Context(), args.Username, args.OrganizationId, tenderCreate)
+	resp, err := h.useCaseBidsCreate.Create(r.Context(), args.Username, args.OrganizationId, bidsCreate)
 	if errors.Is(err, sql.ErrNoRows) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -79,7 +79,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tDTO := tenderDTO{resp.Id, resp.Name, resp.Description, resp.ServiceType, resp.Status, resp.Version, resp.Responsible}
+	tDTO := bidsDTO{resp.Id, resp.Name, resp.Description, resp.Status, resp.TenderId, resp.Version, resp.Responsible}
 	b, err = json.Marshal(tDTO)
 	if err != nil {
 		h.log.Error(err.Error())

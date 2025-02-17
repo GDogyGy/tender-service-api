@@ -11,13 +11,17 @@ import (
 	"syscall"
 
 	"TenderServiceApi/internal/config"
+	bidsCreate "TenderServiceApi/internal/handlers/bids/create"
+	bidsFetch "TenderServiceApi/internal/handlers/bids/fetch"
 	tenderCreate "TenderServiceApi/internal/handlers/tender/create"
 	tenderFetch "TenderServiceApi/internal/handlers/tender/fetch"
 	tenderUpdate "TenderServiceApi/internal/handlers/tender/update"
+	bidsRepository "TenderServiceApi/internal/repository/bids"
 	"TenderServiceApi/internal/repository/organization"
 	tenderRepository "TenderServiceApi/internal/repository/tender"
 	"TenderServiceApi/internal/storage/postgres"
-	organizationUseCaseFetch "TenderServiceApi/internal/usecases/organization/fetch"
+	bidsUseCaseCreate "TenderServiceApi/internal/usecases/bids/create"
+	bidsUseCaseFetch "TenderServiceApi/internal/usecases/bids/fetch"
 	organizationUseCaseVerify "TenderServiceApi/internal/usecases/organization/verification"
 	tenderUseCaseCreate "TenderServiceApi/internal/usecases/tender/create"
 	tenderUseCaseEdite "TenderServiceApi/internal/usecases/tender/edite"
@@ -51,21 +55,33 @@ func main() {
 	router := http.NewServeMux()
 
 	tenderRepository := tenderRepository.NewRepository(storage.Db)
+	bidsRepository := bidsRepository.NewRepository(storage.Db)
 	organizationRepository := organization.NewRepository(storage.Db)
 
 	useCaseTenderVerify := tenderUseCaseVerify.NewService(tenderRepository)
 	useCaseOrganizationVerify := organizationUseCaseVerify.NewService(organizationRepository)
-	useCaseOrganizationFetch := organizationUseCaseFetch.NewService(organizationRepository)
+	// useCaseOrganizationFetch := organizationUseCaseFetch.NewService(organizationRepository)
 	useCaseTenderFetch := tenderUseCaseFetch.NewService(tenderRepository, useCaseTenderVerify)
-	useCaseTenderEdite := tenderUseCaseEdite.NewService(tenderRepository, useCaseOrganizationVerify, useCaseOrganizationFetch)
+	// useCaseTenderEdite := tenderUseCaseEdite.NewService(tenderRepository, useCaseOrganizationVerify, useCaseOrganizationFetch)
+	useCaseTenderEdite := tenderUseCaseEdite.NewService(tenderRepository, useCaseTenderVerify)
 	tenderUseCaseCreate := tenderUseCaseCreate.NewService(tenderRepository, useCaseOrganizationVerify)
 
-	handlerFetch := tenderFetch.NewHandler(log, useCaseTenderFetch)
-	handlerCreate := tenderCreate.NewHandler(log, tenderUseCaseCreate)
-	handlerUpdate := tenderUpdate.NewHandler(log, useCaseTenderEdite)
-	handlerFetch.Register(router)
-	handlerCreate.Register(router)
-	handlerUpdate.Register(router)
+	bidsUseCaseCreate := bidsUseCaseCreate.NewService(bidsRepository, useCaseOrganizationVerify)
+	bidsUseCaseFetch := bidsUseCaseFetch.NewService(bidsRepository, useCaseTenderVerify)
+
+	handlerTenderFetch := tenderFetch.NewHandler(log, useCaseTenderFetch)
+	handlerTenderCreate := tenderCreate.NewHandler(log, tenderUseCaseCreate)
+	handlerTenderUpdate := tenderUpdate.NewHandler(log, useCaseTenderEdite)
+
+	handlerBidsCreate := bidsCreate.NewHandler(log, bidsUseCaseCreate)
+	handlerBidsFetch := bidsFetch.NewHandler(log, bidsUseCaseFetch)
+
+	handlerTenderFetch.Register(router)
+	handlerTenderCreate.Register(router)
+	handlerTenderUpdate.Register(router)
+
+	handlerBidsCreate.Register(router)
+	handlerBidsFetch.Register(router)
 
 	StartServer(ctx, cfg, log, router)
 }

@@ -138,7 +138,7 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tender, err := h.tenderFetch.FetchStatus(r.Context(), rq.Get(user), rq.Get(tenderId))
-	if errors.Is(err, model.NotFindResponsibleTender) {
+	if errors.Is(err, model.NotFindResponsible) {
 		h.log.Error("FetchTenderStatus error: " + err.Error())
 		w.WriteHeader(http.StatusForbidden)
 		return

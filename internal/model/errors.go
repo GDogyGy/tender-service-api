@@ -5,4 +5,4 @@ import (
 )
 
 var NotFound = errors.New("not found")
-var NotFindResponsibleTender = errors.New("not found")
+var NotFindResponsible = errors.New("not found responsible")

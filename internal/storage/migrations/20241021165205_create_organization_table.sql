@@ -11,8 +11,8 @@ CREATE TABLE organization
     updated_at  TIMESTAMP        DEFAULT CURRENT_TIMESTAMP
 );
 INSERT INTO organization
-VALUES (uuid_generate_v4(),'BlackRock', 'BlackRock is finance organization', 'IE'),
-       (uuid_generate_v4(), 'WaterBlue', 'WATER BLUE focuses on logistics operations in various countries.', 'JSC');
+VALUES ('6cd13d02-ae0c-40cc-a7ae-967f923bd8cb','BlackRock', 'BlackRock is finance organization', 'IE'),
+       ('b4429652-1b66-4f96-a37a-d089e9dbf7a8', 'WaterBlue', 'WATER BLUE focuses on logistics operations in various countries.', 'JSC');
 -- +goose StatementEnd
 
 -- +goose Down

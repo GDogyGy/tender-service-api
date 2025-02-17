@@ -240,7 +240,7 @@ func TestHandleFetchStatus(t *testing.T) {
 			url:    "/api/tenders/status?username=username&tenderId=1",
 			method: http.MethodGet,
 			prepare: func(service *MockuseCasesTenderFetch, log *Mocklog) {
-				service.On("FetchStatus", mock.Anything, "username", "1").Return(model.Tender{}, model.NotFindResponsibleTender)
+				service.On("FetchStatus", mock.Anything, "username", "1").Return(model.Tender{}, model.NotFindResponsible)
 				log.On("Error", mock.Anything).Return("")
 			},
 			expectations: func(t *testing.T, statusCode int) {
