@@ -97,6 +97,56 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Bids) (model.Bi
 	return saveModel, nil
 }
 
+func (t *Repository) CheckResponsible(ctx context.Context, username string, bidsId string) (bool, error) {
+	const op = "repository.bids.CheckResponsible"
+	tender := t.db.QueryRowxContext(ctx, `SELECT COUNT(*) FROM bids left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 AND bids.id = $2 and version = (SELECT MAX(version) FROM bids t2 WHERE bids.id = t2.id)`, username, bidsId)
+	err := tender.Err()
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	c := 0
+
+	err = tender.Scan(&c)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, model.NotFound
+	}
+
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if c > 0 {
+		return true, nil
+	}
+	return false, model.NotFindResponsible
+}
+
+func (t *Repository) FetchById(ctx context.Context, bidsId string) (model.Bids, error) {
+	const op = "repository.tender.FetchById"
+
+	q := fmt.Sprintf(`SELECT %s FROM bids WHERE bids.id = $1 and version = (SELECT MAX(version) FROM bids t2 WHERE bids.id = t2.id)`, strings.Join(column, ","))
+	tender := t.db.QueryRowxContext(ctx, q, bidsId)
+	err := tender.Err()
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Bids{}, model.NotFound
+	}
+	if err != nil {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var te row
+	err = tender.StructScan(&te)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Bids{}, model.NotFound
+	}
+	if err != nil {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return te.toModel(), nil
+}
+
 var column = []string{"bids.id", "bids.name", "bids.description", "bids.status", "bids.tender_id", "bids.version", "bids.responsible"}
 
 func (t *Repository) fromRows(rows *sqlx.Rows) (model.Bids, error) {

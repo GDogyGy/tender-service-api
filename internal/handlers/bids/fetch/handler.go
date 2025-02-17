@@ -2,6 +2,7 @@ package fetch
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -19,6 +20,7 @@ type log interface {
 type useCaseBidsFetch interface {
 	FetchListByTender(ctx context.Context, username string, tenderId string) ([]model.Bids, error)
 	FetchListByUser(ctx context.Context, username string) ([]model.Bids, error)
+	FetchStatus(ctx context.Context, username string, bidsId string) (model.Bids, error)
 }
 
 type Handler struct {
@@ -35,6 +37,7 @@ func NewHandler(l log, t useCaseBidsFetch) Handler {
 func (h *Handler) Register(router *http.ServeMux) {
 	router.HandleFunc(http.MethodGet+" /api/bids/{tenderId}/list", h.FetchListByTender)
 	router.HandleFunc(http.MethodGet+" /api/bids/my", h.FetchListByUser)
+	router.HandleFunc(http.MethodGet+" /api/bids/status", h.FetchStatus)
 }
 
 var tenderIdRegexp = regexp.MustCompile(`/api/bids/(.*)/list`)
@@ -126,6 +129,55 @@ func (h *Handler) FetchListByUser(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(tenders) == 0 {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	rq := r.URL.Query()
+	user := "username"
+	bidsId := "bidsId"
+
+	if len(rq) > 2 || rq.Get(user) == "" || rq.Get(bidsId) == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tender, err := h.bidsFetch.FetchStatus(r.Context(), rq.Get(user), rq.Get(bidsId))
+	if errors.Is(err, model.NotFindResponsible) {
+		h.log.Error("FetchBidsStatus error: " + err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		h.log.Error("FetchBidsStatus error: " + err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if err != nil {
+		h.log.Error("FetchBidsStatus error: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(tender)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

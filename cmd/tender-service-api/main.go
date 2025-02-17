@@ -22,6 +22,7 @@ import (
 	"TenderServiceApi/internal/storage/postgres"
 	bidsUseCaseCreate "TenderServiceApi/internal/usecases/bids/create"
 	bidsUseCaseFetch "TenderServiceApi/internal/usecases/bids/fetch"
+	bidsUseCaseVerify "TenderServiceApi/internal/usecases/bids/verification"
 	organizationUseCaseVerify "TenderServiceApi/internal/usecases/organization/verification"
 	tenderUseCaseCreate "TenderServiceApi/internal/usecases/tender/create"
 	tenderUseCaseEdite "TenderServiceApi/internal/usecases/tender/edite"
@@ -59,15 +60,14 @@ func main() {
 	organizationRepository := organization.NewRepository(storage.Db)
 
 	useCaseTenderVerify := tenderUseCaseVerify.NewService(tenderRepository)
+	useCaseBidsVerify := bidsUseCaseVerify.NewService(bidsRepository)
 	useCaseOrganizationVerify := organizationUseCaseVerify.NewService(organizationRepository)
-	// useCaseOrganizationFetch := organizationUseCaseFetch.NewService(organizationRepository)
 	useCaseTenderFetch := tenderUseCaseFetch.NewService(tenderRepository, useCaseTenderVerify)
-	// useCaseTenderEdite := tenderUseCaseEdite.NewService(tenderRepository, useCaseOrganizationVerify, useCaseOrganizationFetch)
 	useCaseTenderEdite := tenderUseCaseEdite.NewService(tenderRepository, useCaseTenderVerify)
 	tenderUseCaseCreate := tenderUseCaseCreate.NewService(tenderRepository, useCaseOrganizationVerify)
 
 	bidsUseCaseCreate := bidsUseCaseCreate.NewService(bidsRepository, useCaseOrganizationVerify)
-	bidsUseCaseFetch := bidsUseCaseFetch.NewService(bidsRepository, useCaseTenderVerify)
+	bidsUseCaseFetch := bidsUseCaseFetch.NewService(bidsRepository, useCaseTenderVerify, useCaseBidsVerify)
 
 	handlerTenderFetch := tenderFetch.NewHandler(log, useCaseTenderFetch)
 	handlerTenderCreate := tenderCreate.NewHandler(log, tenderUseCaseCreate)
