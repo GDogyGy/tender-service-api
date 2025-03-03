@@ -12,14 +12,12 @@ import (
 	"TenderServiceApi/internal/model"
 )
 
-//go:generate mockery  --inpackage --name=log --exported --testonly --inpackage-suffix
 type log interface {
 	Error(msg string, args ...any)
 }
 
-//go:generate mockery --inpackage --name=useCaseTenderEdite --exported --testonly --inpackage-suffix
 type useCaseTenderEdite interface {
-	Edite(ctx context.Context, id string, username string, tenderNew model.Tender) (model.Tender, error)
+	Edit(ctx context.Context, id string, username string, tenderNew model.Tender) (model.Tender, error)
 	Rollback(ctx context.Context, id string, username string, version string) (model.Tender, error)
 	Status(ctx context.Context, username string, tenderId string, status string) (model.Tender, error)
 }
@@ -40,13 +38,12 @@ func NewHandler(l log, t useCaseTenderEdite) Handler {
 }
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodPatch+" /api/tenders/{id}/edit", h.Edite)
+	router.HandleFunc(http.MethodPatch+" /api/tenders/{id}/edit", h.Edit)
 	router.HandleFunc(http.MethodPut+" /api/tenders/{id}/rollback/{version}", h.Rollback)
 	router.HandleFunc(http.MethodPut+" /api/tenders/status", h.Status)
 }
 
-// Edite TODO: Почему в две базы кладем? потому что Тендеры могут создавать только пользователи от имени своей организации. А этих тендеров может быть несколько от одного человека и как понять какой тендер откатывать а какой не трогать?
-func (h *Handler) Edite(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -61,12 +58,14 @@ func (h *Handler) Edite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := io.ReadAll(r.Body)
-
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	defer func() {
+		_ = r.Body.Close()
+	}()
 
 	if len(b) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
@@ -87,7 +86,7 @@ func (h *Handler) Edite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.tenderEdite.Edite(r.Context(), id[1], rq.Get(user), tenderNew)
+	resp, err := h.tenderEdite.Edit(r.Context(), id[1], rq.Get(user), tenderNew)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -112,7 +111,6 @@ func (h *Handler) Edite(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Rollback TODO: После отката, считается новой правкой с увеличением версии.
 func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		w.WriteHeader(http.StatusMethodNotAllowed)

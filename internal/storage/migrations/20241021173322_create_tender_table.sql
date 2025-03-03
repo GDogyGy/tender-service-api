@@ -11,7 +11,7 @@ CREATE TABLE tender
     service_type VARCHAR(200)  NOT NULL,
     status       tender_status NOT NULL,
     version      INT           NOT NULL default 1,
-    responsible  UUID REFERENCES organization_responsible (id)
+    responsible  UUID REFERENCES organization (id)
 
 );
 
@@ -22,7 +22,7 @@ VALUES ('Tender: Global Village Construct',
         'Building',
         'CREATED',
         1,
-        (SELECT organization_responsible.id
+        (SELECT organization_responsible.organization_id
          FROM organization_responsible
                   INNER JOIN employee
                              ON employee.username = 'user1' AND organization_responsible.user_id = employee.id));
@@ -34,7 +34,7 @@ VALUES ('Tender: Development Farmers Web App',
         'Development',
         'PUBLISHED',
         1,
-        (SELECT organization_responsible.id
+        (SELECT organization_responsible.organization_id
          FROM organization_responsible
                   INNER JOIN employee
                              ON employee.username = 'user1' AND organization_responsible.user_id = employee.id));
@@ -46,7 +46,7 @@ VALUES ('Tender: Development Sellers Web App',
         'Development',
         'PUBLISHED',
         1,
-        (SELECT organization_responsible.id
+        (SELECT organization_responsible.organization_id
          FROM organization_responsible
                   INNER JOIN employee
                              ON employee.username = 'user2' AND organization_responsible.user_id = employee.id));
@@ -58,7 +58,7 @@ VALUES ('Tender: inspect restaurant',
         'Examination',
         'CLOSED',
         1,
-        (SELECT organization_responsible.id
+        (SELECT organization_responsible.organization_id
          FROM organization_responsible
                   INNER JOIN employee
                              ON employee.username = 'user2' AND organization_responsible.user_id = employee.id));

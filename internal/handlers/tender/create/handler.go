@@ -46,6 +46,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
+
 	if len(b) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return

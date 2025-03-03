@@ -9,7 +9,7 @@ run: linter
 linter:
 	golangci-lint run ./... --config=./.golangci.yaml
 testing:
-	go test ./... -coverprofile cover.out
+	go test -run TestHandlePing ./internal/handlers/ping/fetch -count=1 && go test ./... -coverprofile cover.out -count=1
 
 test-coverage: testing
 	go tool cover -func cover.out | grep total | awk '{print $3}'

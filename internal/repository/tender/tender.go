@@ -83,7 +83,7 @@ func (t *Repository) FetchListByUser(ctx context.Context, username string) ([]mo
 
 func (t *Repository) CheckResponsible(ctx context.Context, username string, tenderId string) (bool, error) {
 	const op = "repository.tender.CheckResponsible"
-	tender := t.db.QueryRowxContext(ctx, `SELECT COUNT(*) FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 AND tender.id = $2 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, username, tenderId)
+	tender := t.db.QueryRowxContext(ctx, `SELECT COUNT(*) FROM tender left join organization_responsible o on responsible = o.organization_id left join employee e on o.user_id = e.id WHERE e.username = $1 AND tender.id = $2 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, username, tenderId)
 
 	err := tender.Err()
 
@@ -162,8 +162,8 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Tender) (model.
 	return saveModel, nil
 }
 
-func (t *Repository) Edite(ctx context.Context, tenderNew model.Tender, tender model.Tender) (model.Tender, error) {
-	const op = "repository.tender.Edite"
+func (t *Repository) Edit(ctx context.Context, tenderNew model.Tender, tender model.Tender) (model.Tender, error) {
+	const op = "repository.tender.Edit"
 	var r row
 	tenderNew.Version = tender.Version + 1
 

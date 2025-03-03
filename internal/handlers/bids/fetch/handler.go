@@ -23,24 +23,33 @@ type useCaseBidsFetch interface {
 	FetchStatus(ctx context.Context, username string, bidsId string) (model.Bids, error)
 }
 
-type Handler struct {
-	log       log
-	bidsFetch useCaseBidsFetch
+//go:generate mockery --inpackage --name=useCaseBidFeedbackFetch --exported --testonly --inpackage-suffix
+type useCaseBidFeedbackFetch interface {
+	FetchReviews(ctx context.Context, username string, tenderID string, authorUsername string, organizationID string) ([]model.BidFeedback, error)
 }
 
-func NewHandler(l log, t useCaseBidsFetch) Handler {
+type Handler struct {
+	log              log
+	bidsFetch        useCaseBidsFetch
+	bidFeedbackFetch useCaseBidFeedbackFetch
+}
+
+func NewHandler(l log, t useCaseBidsFetch, f useCaseBidFeedbackFetch) Handler {
 	return Handler{
-		l, t,
+		l, t, f,
 	}
 }
 
-func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodGet+" /api/bids/{tenderId}/list", h.FetchListByTender)
-	router.HandleFunc(http.MethodGet+" /api/bids/my", h.FetchListByUser)
-	router.HandleFunc(http.MethodGet+" /api/bids/status", h.FetchStatus)
-}
-
+var tenderIdReviewRegexp = regexp.MustCompile(`/api/bids/(.*)/reviews\?`)
 var tenderIdRegexp = regexp.MustCompile(`/api/bids/(.*)/list`)
+var bidIdStatusRegexp = regexp.MustCompile(`/api/bids/(.*)/status\?`)
+
+func (h *Handler) Register(router *http.ServeMux) {
+	router.HandleFunc(http.MethodGet+" /api/bids/{tenderID}/list", h.FetchListByTender)
+	router.HandleFunc(http.MethodGet+" /api/bids/my", h.FetchListByUser)
+	router.HandleFunc(http.MethodGet+" /api/bids/{bidID}/status", h.FetchStatus)
+	router.HandleFunc(http.MethodGet+" /api/bids/{tenderID}/reviews", h.FetchReviews)
+}
 
 func (h *Handler) FetchListByTender(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -150,14 +159,19 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 
 	rq := r.URL.Query()
 	user := "username"
-	bidsId := "bidsId"
 
-	if len(rq) > 2 || rq.Get(user) == "" || rq.Get(bidsId) == "" {
+	if len(rq) > 1 || rq.Get(user) == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	tender, err := h.bidsFetch.FetchStatus(r.Context(), rq.Get(user), rq.Get(bidsId))
+	bidID := bidIdStatusRegexp.FindStringSubmatch(r.RequestURI)
+	if bidID == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tender, err := h.bidsFetch.FetchStatus(r.Context(), rq.Get(user), bidID[1])
 	if errors.Is(err, model.NotFindResponsible) {
 		h.log.Error("FetchBidsStatus error: " + err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -175,6 +189,61 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := json.Marshal(tender)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) FetchReviews(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	rq := r.URL.Query()
+	username := "username"
+	organizationID := "organizationId"
+	authorUser := "authorUsername"
+	if len(rq) < 3 || rq.Get(username) == "" || rq.Get(organizationID) == "" || rq.Get(authorUser) == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tenderID := tenderIdReviewRegexp.FindStringSubmatch(r.RequestURI)
+	if tenderID == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	bidFeedback, err := h.bidFeedbackFetch.FetchReviews(r.Context(), rq.Get(username), tenderID[1], rq.Get(authorUser), rq.Get(organizationID))
+	if errors.Is(err, model.NotFindResponsible) {
+		h.log.Error("FetchReviews error: " + err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		h.log.Error("FetchReviews error: " + err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if err != nil {
+		h.log.Error("FetchReviews error: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := json.Marshal(bidFeedback)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

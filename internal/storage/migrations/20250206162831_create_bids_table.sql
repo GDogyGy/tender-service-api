@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TYPE bids_status AS ENUM ('CREATED', 'PUBLISHED', 'CANCELED');
+CREATE TYPE bids_status AS ENUM ('CREATED', 'PUBLISHED', 'CANCELED', 'APPROVED');
 CREATE
     EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE bids
@@ -9,7 +9,7 @@ CREATE TABLE bids
     name        VARCHAR(100) NOT NULL,
     description TEXT         NOT NULL,
     status      bids_status  NOT NULL,
-    tender_id    UUID         NOT NULL,
+    tender_id   UUID         NOT NULL,
     version     INT          NOT NULL default 1,
     responsible UUID REFERENCES organization_responsible (id)
 );
@@ -22,7 +22,7 @@ VALUES ('Предложение 1',
         (SELECT tender.id
          FROM tender
                   INNER JOIN organization_responsible
-                             ON organization_responsible.id = tender.responsible
+                             ON organization_responsible.organization_id = tender.responsible
                   INNER JOIN employee
                              ON employee.id = organization_responsible.user_id AND employee.username = 'user2'
          LIMIT 1),
@@ -39,7 +39,7 @@ VALUES ('Предложение 2',
         (SELECT tender.id
          FROM tender
                   INNER JOIN organization_responsible
-                             ON organization_responsible.id = tender.responsible
+                             ON organization_responsible.organization_id = tender.responsible
                   INNER JOIN employee
                              ON employee.id = organization_responsible.user_id AND employee.username = 'user1'
          LIMIT 1),
@@ -56,7 +56,7 @@ VALUES ('Предложение 3',
         (SELECT tender.id
          FROM tender
                   INNER JOIN organization_responsible
-                             ON organization_responsible.id = tender.responsible
+                             ON organization_responsible.organization_id = tender.responsible
                   INNER JOIN employee
                              ON employee.id = organization_responsible.user_id AND employee.username = 'user1'
          LIMIT 1),

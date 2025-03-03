@@ -1,17 +1,14 @@
 package model
 
-type Bids struct {
+type BidFeedback struct {
 	Id          string
-	Name        string
+	BidID       string
 	Description string
-	Status      string
-	TenderId    string
-	Version     int
 	Responsible string
+	CreatedAt   string
 }
 
-// TODO: Обсудить с димой замену рефлекту Возможно нужно проще if (id == "") d.Id = a.Id
-func (a *Bids) FillDefault(defaults *Bids) {
+func (a *BidFeedback) FillDefault(defaults *BidFeedback) {
 	type field struct {
 		src  interface{}
 		dest interface{}
@@ -19,12 +16,11 @@ func (a *Bids) FillDefault(defaults *Bids) {
 
 	fields := []field{
 		{&a.Id, &defaults.Id},
-		{&a.Name, &defaults.Name},
+		{&a.BidID, &defaults.BidID},
 		{&a.Description, &defaults.Description},
-		{&a.Status, &defaults.Status},
-		{&a.TenderId, &defaults.TenderId},
-		{&a.Version, &defaults.Version},
 		{&a.Responsible, &defaults.Responsible},
+		{&a.Responsible, &defaults.Responsible},
+		{&a.CreatedAt, &defaults.CreatedAt},
 	}
 
 	for _, f := range fields {
