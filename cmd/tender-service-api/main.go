@@ -15,6 +15,7 @@ import (
 	bidsFetch "TenderServiceApi/internal/handlers/bids/fetch"
 	bidsUpdate "TenderServiceApi/internal/handlers/bids/update"
 	pingFetch "TenderServiceApi/internal/handlers/ping/fetch"
+	swaggerFetch "TenderServiceApi/internal/handlers/swagger/fetch"
 	tenderCreate "TenderServiceApi/internal/handlers/tender/create"
 	tenderFetch "TenderServiceApi/internal/handlers/tender/fetch"
 	tenderUpdate "TenderServiceApi/internal/handlers/tender/update"
@@ -111,6 +112,10 @@ func main() {
 	handlerPingFetch := pingFetch.NewHandler()
 	// Handler Ping !>
 
+	// <! Handler Swagger
+	handlerSwaggerFetch := swaggerFetch.NewHandler()
+	// Handler Swagger !>
+
 	handlerTenderFetch.Register(router)
 	handlerTenderCreate.Register(router)
 	handlerTenderUpdate.Register(router)
@@ -119,6 +124,7 @@ func main() {
 	handlerBidsFetch.Register(router)
 	handlerBidsUpdate.Register(router)
 	handlerPingFetch.Register(router)
+	handlerSwaggerFetch.Register(router)
 
 	StartServer(ctx, cfg, log, router)
 }

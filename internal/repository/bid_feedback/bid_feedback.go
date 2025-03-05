@@ -74,7 +74,7 @@ func (t *Repository) CheckResponsible(ctx context.Context, username string, bidI
 	// TODO: Обсудить с димой: Улучшил запрос по сравнению с другими CheckResponsible в тендере
 	bidFeedback := t.db.QueryRowxContext(ctx, `SELECT exists(SELECT * FROM bids
                          left join tender t on t.id = bids.tender_id
-                         left join organization_responsible o on t.responsible = o.id
+                         left join organization_responsible o on t.responsible = o.organization_id
                          left join employee e on o.user_id = e.id
  	WHERE e.username = $1
   	AND bids.id = $2 and bids.version = (SELECT MAX(version) FROM bids b2 WHERE bids.id = b2.id))`, username, bidID)
