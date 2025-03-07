@@ -1,0 +1,16 @@
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - unparam
+    - forbidigo
+    - gocritic
+issues:
+  exclude-files:
+    - serv.go

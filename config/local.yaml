@@ -1,0 +1,16 @@
+ENV: "local"
+HTTP_SERVER:
+  SERVER_ADDRESS: "localhost:8080"
+  TIMEOUT: 4s
+  IDLE_TIMEOUT: 60s
+POSTGRES:
+#  TODO: ?sslmode=disable как перестать это использовать
+  POSTGRES_CONN: "postgres://root:123@localhost:5432/TenderApi?sslmode=disable"
+  POSTGRES_JDBC_URL: "jdbc:postgresql://root:123@localhost:5432/TenderApi?sslmode=disable"
+  POSTGRES_USERNAME: "root"
+  POSTGRES_PASSWORD: "123"
+  POSTGRES_HOST: "localhost"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DATABASE: "TenderApi"
+TESTING:
+  APP_TEST_PORT: 8081
