@@ -36,7 +36,6 @@ integration-run:
 	go test -tags=integration -parallel=1 ./test/handlers/rollback
 	docker stop ${TEST_CONTAINER_NAME}
 
-
 app-test:
 	docker stop ${TEST_CONTAINER_NAME}
 	docker run --rm -d --name ${TEST_CONTAINER_NAME} -p 5434:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest -d postgres:latest

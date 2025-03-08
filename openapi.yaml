@@ -392,7 +392,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
+            enum: [ 'CREATED', 'PUBLISHED', 'CANCELED', 'APPROVED' ]
           description: Статус предложения
       responses:
         '200':
@@ -492,6 +492,275 @@ paths:
                 $ref: "#/components/schemas/Bid"
         '400':
           description: tender created error
+          content:
+            application/json: { }
+        '405':
+          description: Method not allowed
+          content:
+            application/json: { }
+        '403':
+          description: Status Forbidden
+          content:
+            application/json: { }
+        '500':
+          description: Status Internal Server Error
+          content:
+            application/json: { }
+  /api/tenders:
+    get:
+      summary: Fetch list tenders
+      operationId: fetchListsTenders
+      tags:
+        - TENDERS
+      parameters:
+        - in: query
+          name: servicetype
+          required: false
+          example: "Development,Examination"
+          schema:
+            type: string
+          description: Категория тендера
+      responses:
+        '200':
+          description: Tenders fetch successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tender"
+        '400':
+          description: tenders fetch error
+          content:
+            application/json: { }
+        '405':
+          description: Method not allowed
+          content:
+            application/json: { }
+        '403':
+          description: Status Forbidden
+          content:
+            application/json: { }
+        '500':
+          description: Status Internal Server Error
+          content:
+            application/json: { }
+  /api/tenders/my:
+    get:
+      summary: Fetch list tenders
+      operationId: fetchListsTendersByUser
+      description: Возвращает список тендеров текущего пользователя.
+      tags:
+        - TENDERS
+      parameters:
+        - in: query
+          name: username
+          required: true
+          example: "user1"
+          schema:
+            type: string
+          description: Имя ответственного
+      responses:
+        '200':
+          description: Tenders fetch by user successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tender"
+        '400':
+          description: tenders fetch by user error
+          content:
+            application/json: { }
+        '405':
+          description: Method not allowed
+          content:
+            application/json: { }
+        '403':
+          description: Status Forbidden
+          content:
+            application/json: { }
+        '500':
+          description: Status Internal Server Error
+          content:
+            application/json: { }
+  /api/tenders/status:
+    get:
+      summary: Fetch status tender
+      operationId: fetchStatusTender
+      description: Возвращает статус и тендер.
+      tags:
+        - TENDERS
+      parameters:
+        - in: query
+          name: username
+          required: true
+          example: "user1"
+          schema:
+            type: string
+          description: Имя ответственного организации этого тендера
+        - in: query
+          name: tenderId
+          required: true
+          example: "3f2ffb60-708b-4e76-bb74-f7252d47a0d9"
+          schema:
+            type: string
+          description: ID тендера
+      responses:
+        '200':
+          description: Fetch status tender successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tender"
+        '400':
+          description: Fetch status tender error
+          content:
+            application/json: { }
+        '405':
+          description: Method not allowed
+          content:
+            application/json: { }
+        '403':
+          description: Status Forbidden
+          content:
+            application/json: { }
+        '500':
+          description: Status Internal Server Error
+          content:
+            application/json: { }
+    put:
+      summary: Put new status tender
+      operationId: PutStatusTender
+      tags:
+        - TENDERS
+      parameters:
+        - in: query
+          name: tenderId
+          schema:
+            type: string
+          required: true
+          description: id тендера
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Имя ответственного за тендер
+        - in: query
+          name: status
+          required: true
+          schema:
+            type: string
+            enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
+          description: Статус предложения
+      responses:
+        '200':
+          description: Tender status edit successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tender"
+        '400':
+          description: Tender status edit error
+          content:
+            application/json: { }
+        '405':
+          description: Method not allowed
+          content:
+            application/json: { }
+        '403':
+          description: Status Forbidden
+          content:
+            application/json: { }
+        '500':
+          description: Status Internal Server Error
+          content:
+            application/json: { }
+  /api/tenders/{id}/edit:
+    patch:
+      summary: Edit tender
+      operationId: TenderEdit
+      tags:
+        - TENDERS
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: id тендера
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Имя ответственного за тендер
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenderEditRequest"
+      responses:
+        '200':
+          description: Tender edit successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tender"
+        '400':
+          description: Tender edit error
+          content:
+            application/json: { }
+        '405':
+          description: Method not allowed
+          content:
+            application/json: { }
+        '403':
+          description: Status Forbidden
+          content:
+            application/json: { }
+        '500':
+          description: Status Internal Server Error
+          content:
+            application/json: { }
+  /api/tenders/{tenderID}/rollback/{version}:
+    put:
+      summary: Rollback tender
+      operationId: RollbackTender
+      tags:
+        - TENDERS
+      parameters:
+        - in: path
+          name: tenderID
+          schema:
+            type: string
+          required: true
+          description: id тендера
+        - in: path
+          name: version
+          schema:
+            type: string
+          required: true
+          description: версия тендера для отката
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Имя ответственного за тендер
+      responses:
+        '200':
+          description: tender rollback successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bid"
+        '400':
+          description: tender rollback error
           content:
             application/json: { }
         '405':
@@ -625,6 +894,39 @@ components:
           type: string
           format: string
           example: "550e8400-e29b-41d4-a716-446655440000"
+    Tender:
+      type: object
+      title: "Тендер"
+      properties:
+        id:
+          type: string
+          format: text
+          example: "a6929720-17b0-45b4-bd54-76350fe5119b"
+        name:
+          type: string
+          format: text
+          title: "Имя тендера"
+        description:
+          type: string
+          format: text
+          title: "Описание тендера"
+        service_type:
+          type: string
+          format: text
+          title: "Описание тендера"
+        status:
+          type: string
+          format: text
+          enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
+        version:
+          type: string
+          format: text
+          title: "Версия тендера"
+        responsible:
+          type: string
+          format: string
+          title: "ID организации ответственной за тендер"
+          example: "550e8400-e29b-41d4-a716-446655440000"
     TenderCreateRequest:
       title: "Запрос на создание тендера"
       type: object
@@ -662,3 +964,23 @@ components:
           format: string
           title: "id ответственной организации тандера"
           example: "550e8400-e29b-41d4-a716-446655440000"
+    TenderEditRequest:
+      title: "Запрос на редактирование тендера"
+      type: object
+      required:
+        - name
+        - description
+        - service_type
+      properties:
+        name:
+          type: string
+          format: text
+          title: "Имя тендера"
+        description:
+          type: string
+          format: text
+          title: "Описание тендера"
+        service_type:
+          type: string
+          format: text
+          title: "Категория тендера"

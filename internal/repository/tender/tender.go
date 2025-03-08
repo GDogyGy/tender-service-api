@@ -61,7 +61,7 @@ func (t *Repository) FetchListByUser(ctx context.Context, username string) ([]mo
 	var rows *sqlx.Rows
 	var err error
 
-	q := fmt.Sprintf(`SELECT %s FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, strings.Join(column, ","))
+	q := fmt.Sprintf(`SELECT %s FROM tender left join organization_responsible o on responsible = o.organization_id left join employee e on o.user_id = e.id WHERE e.username = $1 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, strings.Join(column, ","))
 	rows, err = t.db.QueryxContext(ctx, q, username)
 	if errors.Is(err, sql.ErrNoRows) {
 		return tenders, model.NotFound
