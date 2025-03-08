@@ -1,9 +1,8 @@
 package create
 
 import (
-	"context"
-
 	"TenderServiceApi/internal/model"
+	"context"
 )
 
 type Service struct {
@@ -29,6 +28,6 @@ func (s *Service) Create(ctx context.Context, username string, organizationId st
 		return model.Tender{}, err
 	}
 
-	saveModel.Responsible = organizationResponsible.Id
+	saveModel.Responsible = organizationResponsible.OrganizationId
 	return s.tender.Create(ctx, saveModel)
 }
