@@ -392,6 +392,7 @@ paths:
           required: true
           schema:
             type: string
+            enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
           description: Статус предложения
       responses:
         '200':
@@ -447,7 +448,7 @@ paths:
           description: Решение по тендеру
           schema:
             type: string
-            enum: ["APPROVED", "REJECTED"]
+            enum: [ "APPROVED", "REJECTED" ]
       responses:
         '200':
           description: Bid submit decision successfully
@@ -457,6 +458,40 @@ paths:
                 $ref: "#/components/schemas/Bid"
         '400':
           description: bid submit decision error
+          content:
+            application/json: { }
+        '405':
+          description: Method not allowed
+          content:
+            application/json: { }
+        '403':
+          description: Status Forbidden
+          content:
+            application/json: { }
+        '500':
+          description: Status Internal Server Error
+          content:
+            application/json: { }
+  /api/tenders/new:
+    post:
+      summary: tender create
+      operationId: TenderCreate
+      tags:
+        - TENDERS
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenderCreateRequest"
+      responses:
+        '200':
+          description: tender created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bid"
+        '400':
+          description: tender created error
           content:
             application/json: { }
         '405':
@@ -503,7 +538,7 @@ components:
         status:
           type: string
           format: text
-          example: "CREATED"
+          enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
     FeedbackCreateRequest:
       title: "Запрос на создание отзыва к предложению"
       type: object
@@ -533,7 +568,7 @@ components:
         status:
           type: string
           format: text
-          example: "PUBLISHED"
+          enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
     Feedback:
       type: object
       title: Отзыв на предложение
@@ -577,7 +612,7 @@ components:
         status:
           type: string
           format: text
-          example: "CREATED"
+          enum: [ 'CREATED', 'PUBLISHED', 'CANCELED', 'APPROVED' ]
         tenderId:
           type: string
           format: string
@@ -589,4 +624,41 @@ components:
         responsible:
           type: string
           format: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+    TenderCreateRequest:
+      title: "Запрос на создание тендера"
+      type: object
+      required:
+        - name
+        - description
+        - serviceType
+        - status
+        - organizationId
+        - creatorUsername
+      properties:
+        name:
+          type: string
+          format: text
+          example: "Имя тендера"
+        description:
+          type: string
+          format: text
+          title: "Описание тендера"
+        serviceType:
+          type: string
+          format: string
+          title: "Категория тендера"
+        status:
+          type: string
+          format: text
+          enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
+          title: "статус тендера"
+        creatorUsername:
+          type: string
+          format: text
+          title: "Имя ответственного за организацию - создатель тандера"
+        organizationId:
+          type: string
+          format: string
+          title: "id ответственной организации тандера"
           example: "550e8400-e29b-41d4-a716-446655440000"

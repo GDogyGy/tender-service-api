@@ -42,3 +42,9 @@ app-test:
 	docker run --rm -d --name ${TEST_CONTAINER_NAME} -p 5434:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest -d postgres:latest
 	sleep 5
 	docker run --rm -d --name ${TEST_APP_NAME} -p 8081:8081 -e "CONFIG_PATH=config/local.yaml" -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest
+
+swagger-types-generate:
+	oapi-codegen -generate types -package api -o api.gen.go openapi.yaml
+
+# TODO: спросить у димы зачем handler swagger генерит oapi-codegen -generate types,server -package api -o api.gen.go openapi.yaml
+# Параметры по умолчанию для oapi-codegen сгенерируют все: клиент, сервер, определения типов и встроенную спецификацию swagger, но вы можете сгенерировать подмножества этих данных с помощью флага -generate. По умолчанию это types,client,server,spec, но вы можете указать любую их комбинацию.
