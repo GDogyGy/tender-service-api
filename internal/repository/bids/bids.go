@@ -74,7 +74,7 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Bids) (model.Bi
 	const op = "repository.bids.Create"
 
 	r := toRow(saveModel)
-
+	r.Version = 1
 	q := "INSERT INTO bids (name, description, status, tender_id, version, responsible) VALUES($1,$2,$3,$4,$5,$6) RETURNING id"
 
 	result := t.db.QueryRowxContext(ctx, q, r.Name, r.Description, r.Status, r.TenderId, r.Version, r.Responsible)
@@ -92,6 +92,7 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Bids) (model.Bi
 		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
 	}
 	saveModel.Id = id
+	saveModel.Version = 1
 
 	return saveModel, nil
 }

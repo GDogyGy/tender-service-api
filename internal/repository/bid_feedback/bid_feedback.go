@@ -1,13 +1,15 @@
 package bid_feedback
 
 import (
-	"TenderServiceApi/internal/model"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"strings"
+	"time"
+
+	"TenderServiceApi/internal/model"
+	"github.com/jmoiron/sqlx"
 )
 
 type Repository struct {
@@ -21,10 +23,12 @@ func NewRepository(db *sqlx.DB) *Repository {
 func (t *Repository) Create(ctx context.Context, saveModel model.BidFeedback) (model.BidFeedback, error) {
 	const op = "repository.bidFeedback.Create"
 	r := toRow(saveModel)
+	currDate := time.Now()
+	saveModel.CreatedAt = currDate.String()
 
-	q := "INSERT INTO bid_feedback (bid_id, description, responsible) VALUES($1,$2,$3) RETURNING id"
+	q := "INSERT INTO bid_feedback (bid_id, description, responsible, created_at) VALUES($1,$2,$3,$4) RETURNING id"
 
-	result := t.db.QueryRowxContext(ctx, q, r.BidID, r.Description, r.Responsible)
+	result := t.db.QueryRowxContext(ctx, q, r.BidID, r.Description, r.Responsible, currDate)
 
 	err := result.Err()
 	if err != nil {

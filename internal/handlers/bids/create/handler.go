@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"regexp"
 
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"TenderServiceApi/internal/model"
 )
 
@@ -62,23 +64,24 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var args argCreatBids
-	err = json.Unmarshal(b, &args)
+	var bid transport.Bid
+	err = json.Unmarshal(b, &bid)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	var bidsCreate model.Bids
-	err = json.Unmarshal(b, &bidsCreate)
+	var bidCreateRequest transport.BidCreateRequest
+	err = json.Unmarshal(b, &bidCreateRequest)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resp, err := h.useCaseBidsCreate.Create(r.Context(), args.Username, args.OrganizationId, bidsCreate)
+	// TODO: обсудить convert.BidsTransportToModel(bid) возможно далее в usecase тоже работать с транспортом а не с моделью?
+	resp, err := h.useCaseBidsCreate.Create(r.Context(), bidCreateRequest.CreatorUsername, bidCreateRequest.OrganizationId, convert.BidsTransportToModel(bid))
 	if errors.Is(err, sql.ErrNoRows) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -90,8 +93,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tDTO := bidsDTO{resp.Id, resp.Name, resp.Description, resp.Status, resp.TenderId, resp.Version, resp.Responsible}
-	b, err = json.Marshal(tDTO)
+	bid = convert.BidsModelToTransport(resp)
+	b, err = json.Marshal(bid)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -140,15 +143,15 @@ func (h *Handler) Feedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bidFeedbackCreate model.BidFeedback
-	err = json.Unmarshal(b, &bidFeedbackCreate)
+	var feedback transport.Feedback
+	err = json.Unmarshal(b, &feedback)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resp, err := h.useCaseBidFeedbackCreate.Create(r.Context(), rq.Get(username), bidID[1], bidFeedbackCreate)
+	resp, err := h.useCaseBidFeedbackCreate.Create(r.Context(), rq.Get(username), bidID[1], convert.BidFeedbackTransportToModel(feedback))
 	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsible) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -160,8 +163,8 @@ func (h *Handler) Feedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tDTO := bidsFeedbackDTO{resp.Id, resp.BidID, resp.Description, resp.Responsible, resp.CreatedAt}
-	b, err = json.Marshal(tDTO)
+	feedback = convert.BidFeedbackModelToTransport(resp)
+	b, err = json.Marshal(feedback)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

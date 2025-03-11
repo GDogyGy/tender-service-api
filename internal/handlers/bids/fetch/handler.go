@@ -1,6 +1,8 @@
 package fetch
 
 import (
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -93,7 +95,12 @@ func (h *Handler) FetchListByTender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(bids)
+	var bidsTransport []transport.Bid
+	for _, v := range bids {
+		bidsTransport = append(bidsTransport, convert.BidsModelToTransport(v))
+	}
+
+	b, err := json.Marshal(bidsTransport)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -123,20 +130,25 @@ func (h *Handler) FetchListByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tenders, err := h.bidsFetch.FetchListByUser(r.Context(), rq.Get(param))
+	bids, err := h.bidsFetch.FetchListByUser(r.Context(), rq.Get(param))
 	if err != nil {
 		h.log.Error("FetchListByUser error: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	b, err := json.Marshal(tenders)
+	var bidsTransport []transport.Bid
+	for _, v := range bids {
+		bidsTransport = append(bidsTransport, convert.BidsModelToTransport(v))
+	}
+
+	b, err := json.Marshal(bidsTransport)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if len(tenders) == 0 {
+	if len(bidsTransport) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -171,7 +183,7 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tender, err := h.bidsFetch.FetchStatus(r.Context(), rq.Get(user), bidID[1])
+	bid, err := h.bidsFetch.FetchStatus(r.Context(), rq.Get(user), bidID[1])
 	if errors.Is(err, model.NotFindResponsible) {
 		h.log.Error("FetchBidsStatus error: " + err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -188,7 +200,7 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(tender)
+	b, err := json.Marshal(convert.BidsModelToTransport(bid))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -226,7 +238,7 @@ func (h *Handler) FetchReviews(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bidFeedback, err := h.bidFeedbackFetch.FetchReviews(r.Context(), rq.Get(username), tenderID[1], rq.Get(authorUser), rq.Get(organizationID))
+	feedback, err := h.bidFeedbackFetch.FetchReviews(r.Context(), rq.Get(username), tenderID[1], rq.Get(authorUser), rq.Get(organizationID))
 	if errors.Is(err, model.NotFindResponsible) {
 		h.log.Error("FetchReviews error: " + err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -243,7 +255,12 @@ func (h *Handler) FetchReviews(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(bidFeedback)
+	var feedbackTransport []transport.Feedback
+	for _, v := range feedback {
+		feedbackTransport = append(feedbackTransport, convert.BidFeedbackModelToTransport(v))
+	}
+
+	b, err := json.Marshal(feedbackTransport)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

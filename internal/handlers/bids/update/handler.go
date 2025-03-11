@@ -1,6 +1,8 @@
 package update
 
 import (
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -86,24 +88,23 @@ func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bidNew model.Bids
-	err = json.Unmarshal(b, &bidNew)
+	var bid transport.Bid
+	err = json.Unmarshal(b, &bid)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	resp, err := h.bidsEdite.Edit(r.Context(), id[1], rq.Get(user), bidNew)
+	resp, err := h.bidsEdite.Edit(r.Context(), id[1], rq.Get(user), convert.BidsTransportToModel(bid))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	tDTO := bidDTO{resp.Id, resp.Name, resp.Description, resp.Status, resp.TenderId, resp.Version, resp.Responsible}
-
-	b, err = json.Marshal(tDTO)
+	bid = convert.BidsModelToTransport(resp)
+	b, err = json.Marshal(bid)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -145,7 +146,7 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tender, err := h.bidsEdite.Rollback(r.Context(), id[1], rq.Get(user), version[1])
+	bids, err := h.bidsEdite.Rollback(r.Context(), id[1], rq.Get(user), version[1])
 	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsible) || errors.Is(err, model.AlreadyVotedResponsible) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -157,9 +158,7 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tDTO := bidDTO{tender.Id, tender.Name, tender.Description, tender.Status, tender.TenderId, tender.Version, tender.Responsible}
-	b, err := json.Marshal(tDTO)
-
+	b, err := json.Marshal(convert.BidsModelToTransport(bids))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -214,7 +213,7 @@ func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(bid)
+	b, err := json.Marshal(convert.BidsModelToTransport(bid))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -280,7 +279,7 @@ func (h *Handler) SubmitDecision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(bid)
+	b, err := json.Marshal(convert.BidsModelToTransport(bid))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
