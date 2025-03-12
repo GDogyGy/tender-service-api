@@ -1,6 +1,8 @@
 package create
 
 import (
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -46,30 +48,31 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+
+	defer func() { _ = r.Body.Close() }()
 
 	if len(b) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	var args argCreatTender
-	err = json.Unmarshal(b, &args)
+	var tenderRequest transport.TenderCreateRequest
+	err = json.Unmarshal(b, &tenderRequest)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	var tenderCreate model.Tender
-	err = json.Unmarshal(b, &tenderCreate)
+	var tender transport.Tender
+	err = json.Unmarshal(b, &tender)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resp, err := h.useCasesTenderCreate.Create(r.Context(), args.Username, args.OrganizationId, tenderCreate)
+	resp, err := h.useCasesTenderCreate.Create(r.Context(), tenderRequest.CreatorUsername, tenderRequest.OrganizationId, convert.TenderTransportToModel(tender))
 	if errors.Is(err, sql.ErrNoRows) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -81,8 +84,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tDTO := tenderDTO{resp.Id, resp.Name, resp.Description, resp.ServiceType, resp.Status, resp.Version, resp.Responsible}
-	b, err = json.Marshal(tDTO)
+	b, err = json.Marshal(convert.TenderModelToTransport(resp))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

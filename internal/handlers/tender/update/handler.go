@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"regexp"
 
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"TenderServiceApi/internal/model"
 )
 
@@ -78,24 +80,22 @@ func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tenderNew model.Tender
-	err = json.Unmarshal(b, &tenderNew)
+	var tender transport.Tender
+	err = json.Unmarshal(b, &tender)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	resp, err := h.tenderEdite.Edit(r.Context(), id[1], rq.Get(user), tenderNew)
+	resp, err := h.tenderEdite.Edit(r.Context(), id[1], rq.Get(user), convert.TenderTransportToModel(tender))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	tDTO := tenderDTO{resp.Id, resp.Name, resp.Description, resp.ServiceType, resp.Status, resp.Version, resp.Responsible}
-
-	b, err = json.Marshal(tDTO)
+	b, err = json.Marshal(convert.TenderModelToTransport(resp))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -150,9 +150,7 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tDTO := tenderDTO{tender.Id, tender.Name, tender.Description, tender.ServiceType, tender.Status, tender.Version, tender.Responsible}
-	b, err := json.Marshal(tDTO)
-
+	b, err := json.Marshal(convert.TenderModelToTransport(tender))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -202,7 +200,7 @@ func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(tender)
+	b, err := json.Marshal(convert.TenderModelToTransport(tender))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

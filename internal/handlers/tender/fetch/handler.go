@@ -7,6 +7,8 @@ import (
 	"errors"
 	"net/http"
 
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"TenderServiceApi/internal/model"
 )
 
@@ -60,14 +62,19 @@ func (h *Handler) FetchList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(categories)
+	var tendersTransport []transport.Tender
+	for _, v := range categories {
+		tendersTransport = append(tendersTransport, convert.TenderModelToTransport(v))
+	}
+
+	b, err := json.Marshal(tendersTransport)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if len(categories) == 0 {
+	if len(tendersTransport) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -102,13 +109,18 @@ func (h *Handler) FetchListByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(tenders)
+	var tendersTransport []transport.Tender
+	for _, v := range tenders {
+		tendersTransport = append(tendersTransport, convert.TenderModelToTransport(v))
+	}
+
+	b, err := json.Marshal(tendersTransport)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if len(tenders) == 0 {
+	if len(tendersTransport) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -154,7 +166,7 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(tender)
+	b, err := json.Marshal(convert.TenderModelToTransport(tender))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

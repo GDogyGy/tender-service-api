@@ -922,7 +922,7 @@ components:
         - id
         - name
         - description
-        - service_type
+        - serviceType
         - status
         - version
         - responsible
@@ -939,7 +939,7 @@ components:
           type: string
           format: text
           title: "Описание тендера"
-        service_type:
+        serviceType:
           type: string
           format: text
           title: "Описание тендера"
@@ -948,7 +948,7 @@ components:
           format: text
           enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
         version:
-          type: string
+          type: integer
           format: text
           title: "Версия тендера"
         responsible:
@@ -999,7 +999,7 @@ components:
       required:
         - name
         - description
-        - service_type
+        - serviceType
       properties:
         name:
           type: string
@@ -1009,7 +1009,7 @@ components:
           type: string
           format: text
           title: "Описание тендера"
-        service_type:
+        serviceType:
           type: string
           format: text
           title: "Категория тендера"

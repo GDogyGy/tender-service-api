@@ -117,9 +117,9 @@ type Tender struct {
 	Id          string       `json:"id"`
 	Name        string       `json:"name"`
 	Responsible string       `json:"responsible"`
-	ServiceType string       `json:"service_type"`
+	ServiceType string       `json:"serviceType"`
 	Status      TenderStatus `json:"status"`
-	Version     string       `json:"version"`
+	Version     int          `json:"version"`
 }
 
 // TenderStatus defines model for Tender.Status.
@@ -140,9 +140,9 @@ type TenderCreateRequestStatus string
 
 // TenderEditRequest defines model for TenderEditRequest.
 type TenderEditRequest struct {
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	ServiceType string `json:"service_type"`
+	Description string  `json:"description"`
+	Name        string  `json:"name"`
+	ServiceType *string `json:"serviceType,omitempty"`
 }
 
 // FetchListByUserParams defines parameters for FetchListByUser.

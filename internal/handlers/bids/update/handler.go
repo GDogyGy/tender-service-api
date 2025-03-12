@@ -1,8 +1,6 @@
 package update
 
 import (
-	"TenderServiceApi/internal/handlers/types/convert"
-	"TenderServiceApi/internal/handlers/types/transport"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -11,6 +9,8 @@ import (
 	"net/http"
 	"regexp"
 
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"TenderServiceApi/internal/model"
 )
 
