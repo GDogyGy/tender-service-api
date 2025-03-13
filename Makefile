@@ -25,24 +25,15 @@ reset-migrate:
 
 .PHONY: intergration-run
 integration-run:
-	docker run --rm -d --name ${TEST_APP_NAME} -p 8081:8081 -e "CONFIG_PATH=config/local.yaml" -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest
-	sleep 5
-	docker run --rm -d --name ${TEST_CONTAINER_NAME} -p 5434:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest -d postgres:latest
-	sleep 5
+	goose -dir=./internal/storage/migrations postgres "host=localhost user=root port=5434 database=TenderApiTest password=123" up
+	sleep 10
 	go clean -testcache
 	@echo "${BG_GREEN}Run each test integration${RESET}"
 	go test -tags=integration -parallel=1 ./test/handlers/create
 	go test -tags=integration -parallel=1 ./test/handlers/edit
 	go test -tags=integration -parallel=1 ./test/handlers/rollback
-	docker stop ${TEST_CONTAINER_NAME}
 
-app-test:
-	docker stop ${TEST_CONTAINER_NAME}
-	docker run --rm -d --name ${TEST_CONTAINER_NAME} -p 5434:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest -d postgres:latest
-	sleep 5
-	docker run --rm -d --name ${TEST_APP_NAME} -p 8081:8081 -e "CONFIG_PATH=config/local.yaml" -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest
-
-swagger-types-generate:
+swagger-build:
 	oapi-codegen -generate types -package transport -o ./internal/handlers/types/transport/transport.go openapi.yaml
 
 # TODO: спросить у димы зачем handler swagger генерит oapi-codegen -generate types,server -package api -o api.gen.go openapi.yaml

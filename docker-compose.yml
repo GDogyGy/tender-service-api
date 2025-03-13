@@ -22,11 +22,12 @@ services:
   app_test:
     container_name: app_test
     build:
-      context: ../
-      dockerfile: ./internal/docker/app-test/Dockerfile
+      context: .
+      dockerfile: ./docker/app-test/Dockerfile
     restart: always
     environment:
-      - CONFIG_PATH=${CONFIG_PATH}
+      - CONFIG_PATH=config/local.yaml
+      - SERVER_ADDRESS=localhost:9000
       - POSTGRES_DATABASE=${POSTGRES_DATABASE}
       - POSTGRES_PASSWORD=123
       - POSTGRES_DB=TenderApi
@@ -34,9 +35,10 @@ services:
       - POSTGRES_USER=root
       - POSTGRES_PORT=5432
     ports:
-      - '${APP_TEST_PORT}:${APP_TEST_PORT}'
+      - '9000:9000'
     depends_on:
-      - db_test
+      db_test:
+        condition: service_healthy
   db_test:
     image: postgres:latest
     restart: always
@@ -50,7 +52,7 @@ services:
     ports:
       - '5434:5432'
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-U", "root" ]
+      test: [ "CMD-SHELL", "pg_isready -U root -d TenderApiTest" ]
       interval: 5s
       timeout: 5s
       retries: 5
