@@ -28,3 +28,21 @@ func TenderTransportToModel(t transport.Tender) model.Tender {
 		Responsible: t.Responsible,
 	}
 }
+
+func TenderReqCreateTransportToModel(t transport.TenderCreateRequest) model.Tender {
+	return model.Tender{
+		Name:        t.Name,
+		Description: t.Description,
+		ServiceType: t.ServiceType,
+		Status:      string(t.Status),
+		Responsible: t.OrganizationId,
+	}
+}
+
+func TenderReqEditTransportToModel(t transport.TenderEditRequest) model.Tender {
+	return model.Tender{
+		Name:        t.Name,
+		Description: t.Description,
+		ServiceType: t.ServiceType,
+	}
+}

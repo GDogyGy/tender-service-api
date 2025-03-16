@@ -28,6 +28,9 @@ func (s *Service) Create(ctx context.Context, username string, organizationId st
 		return model.Tender{}, err
 	}
 
+	if saveModel.Version == 0 {
+		saveModel.Version = 1
+	}
 	saveModel.Responsible = organizationResponsible.OrganizationId
 	return s.tender.Create(ctx, saveModel)
 }

@@ -392,7 +392,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [ 'CREATED', 'PUBLISHED', 'CANCELED', 'APPROVED' ]
+            enum: [ 'CREATED', 'PUBLISHED' ]
           description: Статус предложения
       responses:
         '200':
@@ -811,7 +811,7 @@ components:
         status:
           type: string
           format: text
-          enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
+          enum: [ 'CREATED' ]
     FeedbackCreateRequest:
       title: "Запрос на создание отзыва к предложению"
       type: object
@@ -828,7 +828,6 @@ components:
       required:
         - name
         - description
-        - status
       properties:
         name:
           type: string
@@ -838,10 +837,6 @@ components:
           type: string
           format: text
           example: "Описание предложения"
-        status:
-          type: string
-          format: text
-          enum: [ 'CREATED', 'PUBLISHED', 'CLOSED' ]
     Feedback:
       type: object
       title: Отзыв на предложение

@@ -166,7 +166,7 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(convert.TenderModelToTransport(tender))
+	b, err := json.Marshal(convert.TenderModelToTransport(tender).Status)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

@@ -36,7 +36,7 @@ func (s *Service) Edit(ctx context.Context, id string, username string, bidNew m
 		return model.Bids{}, err
 	}
 
-	bid.FillDefault(&bidNew)
+	bidNew.FillDefault(bid)
 
 	resp, err := s.bid.Edit(ctx, bidNew, bid)
 	if err != nil {

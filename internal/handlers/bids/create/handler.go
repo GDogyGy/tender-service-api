@@ -57,17 +57,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() {
+		r.Body.Close()
+	}()
 
 	if len(b) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	var bid transport.Bid
-	err = json.Unmarshal(b, &bid)
-	if err != nil {
-		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -80,8 +74,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: обсудить convert.BidsTransportToModel(bid) возможно далее в usecase тоже работать с транспортом а не с моделью?
-	resp, err := h.useCaseBidsCreate.Create(r.Context(), bidCreateRequest.CreatorUsername, bidCreateRequest.OrganizationId, convert.BidsTransportToModel(bid))
+	if bidCreateRequest.Status != transport.BidCreateRequestStatusCREATED {
+		h.log.Error(model.BadStatus.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.useCaseBidsCreate.Create(r.Context(), bidCreateRequest.CreatorUsername, bidCreateRequest.OrganizationId, convert.BidsReqCreateTransportToModel(bidCreateRequest))
 	if errors.Is(err, sql.ErrNoRows) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -93,7 +92,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bid = convert.BidsModelToTransport(resp)
+	bid := convert.BidsModelToTransport(resp)
 	b, err = json.Marshal(bid)
 	if err != nil {
 		h.log.Error(err.Error())

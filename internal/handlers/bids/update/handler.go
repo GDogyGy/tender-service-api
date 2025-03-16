@@ -88,22 +88,22 @@ func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bid transport.Bid
-	err = json.Unmarshal(b, &bid)
+	var bidRequest transport.BidEditRequest
+	err = json.Unmarshal(b, &bidRequest)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	resp, err := h.bidsEdite.Edit(r.Context(), id[1], rq.Get(user), convert.BidsTransportToModel(bid))
+	resp, err := h.bidsEdite.Edit(r.Context(), id[1], rq.Get(user), convert.BidsReqEditTransportToModel(bidRequest))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	bid = convert.BidsModelToTransport(resp)
+	bid := convert.BidsModelToTransport(resp)
 	b, err = json.Marshal(bid)
 	if err != nil {
 		h.log.Error(err.Error())
@@ -190,6 +190,12 @@ func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if transport.PutStatusBidParamsStatus(rq.Get(status)) != transport.PutStatusBidParamsStatusCREATED && transport.PutStatusBidParamsStatus(rq.Get(status)) != transport.PutStatusBidParamsStatusPUBLISHED {
+		h.log.Error(model.BadStatus.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	bidID := bidIdStatusRegexp.FindStringSubmatch(r.RequestURI)
 	if bidID == nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -246,12 +252,8 @@ func (h *Handler) SubmitDecision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := map[string]bool{
-		"REJECTED": false,
-		"APPROVED": true,
-	}
-	_, ok := m[rq.Get(decision)]
-	if !ok {
+	if transport.SubmitDecisionBidParamsDecision(rq.Get(decision)) != transport.APPROVED && transport.SubmitDecisionBidParamsDecision(rq.Get(decision)) != transport.REJECTED {
+		h.log.Error(model.BadStatus.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

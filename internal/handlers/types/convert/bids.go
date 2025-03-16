@@ -28,3 +28,19 @@ func BidsTransportToModel(t transport.Bid) model.Bids {
 		Version:     t.Version,
 	}
 }
+
+func BidsReqCreateTransportToModel(t transport.BidCreateRequest) model.Bids {
+	return model.Bids{
+		Description: t.Description,
+		Name:        t.Name,
+		TenderId:    t.TenderId,
+		Status:      string(t.Status),
+	}
+}
+
+func BidsReqEditTransportToModel(t transport.BidEditRequest) model.Bids {
+	return model.Bids{
+		Description: t.Description,
+		Name:        t.Name,
+	}
+}

@@ -200,7 +200,7 @@ func (h *Handler) FetchStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(convert.BidsModelToTransport(bid))
+	b, err := json.Marshal(convert.BidsModelToTransport(bid).Status)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

@@ -1,8 +1,6 @@
 package create
 
 import (
-	"TenderServiceApi/internal/handlers/types/convert"
-	"TenderServiceApi/internal/handlers/types/transport"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -10,6 +8,8 @@ import (
 	"io"
 	"net/http"
 
+	"TenderServiceApi/internal/handlers/types/convert"
+	"TenderServiceApi/internal/handlers/types/transport"
 	"TenderServiceApi/internal/model"
 )
 
@@ -64,15 +64,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tender transport.Tender
-	err = json.Unmarshal(b, &tender)
-	if err != nil {
-		h.log.Error(err.Error())
+	if tenderRequest.Status != transport.TenderCreateRequestStatusCREATED {
+		h.log.Error(model.BadStatus.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resp, err := h.useCasesTenderCreate.Create(r.Context(), tenderRequest.CreatorUsername, tenderRequest.OrganizationId, convert.TenderTransportToModel(tender))
+	resp, err := h.useCasesTenderCreate.Create(r.Context(), tenderRequest.CreatorUsername, tenderRequest.OrganizationId, convert.TenderReqCreateTransportToModel(tenderRequest))
 	if errors.Is(err, sql.ErrNoRows) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)

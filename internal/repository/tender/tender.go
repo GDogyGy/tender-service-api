@@ -140,7 +140,6 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Tender) (model.
 	const op = "repository.tender.Create"
 
 	r := toRow(saveModel)
-
 	q := "INSERT INTO tender (name, description, service_type, status, responsible) VALUES($1,$2,$3,$4,$5) RETURNING id"
 
 	result := t.db.QueryRowxContext(ctx, q, r.Name, r.Description, r.ServiceType, r.Status, r.Responsible)

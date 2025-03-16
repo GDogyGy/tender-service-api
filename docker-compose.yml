@@ -27,7 +27,7 @@ services:
     restart: always
     environment:
       - CONFIG_PATH=config/local.yaml
-      - SERVER_ADDRESS=localhost:9000
+      - SERVER_ADDRESS=:9000
       - POSTGRES_DATABASE=${POSTGRES_DATABASE}
       - POSTGRES_PASSWORD=123
       - POSTGRES_DB=TenderApi

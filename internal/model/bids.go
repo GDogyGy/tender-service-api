@@ -10,33 +10,32 @@ type Bids struct {
 	Responsible string
 }
 
-// TODO: Обсудить с димой замену рефлекту Возможно нужно проще if (id == "") d.Id = a.Id
-func (a *Bids) FillDefault(defaults *Bids) {
-	type field struct {
-		src  interface{}
-		dest interface{}
+func (a *Bids) FillDefault(bids Bids) {
+	if a.Id == "" {
+		a.Id = bids.Id
 	}
 
-	fields := []field{
-		{&a.Id, &defaults.Id},
-		{&a.Name, &defaults.Name},
-		{&a.Description, &defaults.Description},
-		{&a.Status, &defaults.Status},
-		{&a.TenderId, &defaults.TenderId},
-		{&a.Version, &defaults.Version},
-		{&a.Responsible, &defaults.Responsible},
+	if a.Name == "" {
+		a.Name = bids.Name
 	}
 
-	for _, f := range fields {
-		switch dest := f.dest.(type) {
-		case *string:
-			if *dest == "" {
-				*dest = *f.src.(*string)
-			}
-		case *int:
-			if *dest == 0 {
-				*dest = *f.src.(*int)
-			}
-		}
+	if a.Description == "" {
+		a.Description = bids.Description
+	}
+
+	if a.Status == "" {
+		a.Status = bids.Status
+	}
+
+	if a.TenderId == "" {
+		a.TenderId = bids.TenderId
+	}
+
+	if a.Version == 0 {
+		a.Version = bids.Version
+	}
+
+	if a.Responsible == "" {
+		a.Responsible = bids.Responsible
 	}
 }

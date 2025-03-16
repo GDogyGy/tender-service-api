@@ -13,16 +13,7 @@ const (
 
 // Defines values for BidCreateRequestStatus.
 const (
-	BidCreateRequestStatusCLOSED    BidCreateRequestStatus = "CLOSED"
-	BidCreateRequestStatusCREATED   BidCreateRequestStatus = "CREATED"
-	BidCreateRequestStatusPUBLISHED BidCreateRequestStatus = "PUBLISHED"
-)
-
-// Defines values for BidEditRequestStatus.
-const (
-	BidEditRequestStatusCLOSED    BidEditRequestStatus = "CLOSED"
-	BidEditRequestStatusCREATED   BidEditRequestStatus = "CREATED"
-	BidEditRequestStatusPUBLISHED BidEditRequestStatus = "PUBLISHED"
+	BidCreateRequestStatusCREATED BidCreateRequestStatus = "CREATED"
 )
 
 // Defines values for TenderStatus.
@@ -34,15 +25,11 @@ const (
 
 // Defines values for TenderCreateRequestStatus.
 const (
-	TenderCreateRequestStatusCLOSED    TenderCreateRequestStatus = "CLOSED"
-	TenderCreateRequestStatusCREATED   TenderCreateRequestStatus = "CREATED"
-	TenderCreateRequestStatusPUBLISHED TenderCreateRequestStatus = "PUBLISHED"
+	TenderCreateRequestStatusCREATED TenderCreateRequestStatus = "CREATED"
 )
 
 // Defines values for PutStatusBidParamsStatus.
 const (
-	PutStatusBidParamsStatusAPPROVED  PutStatusBidParamsStatus = "APPROVED"
-	PutStatusBidParamsStatusCANCELED  PutStatusBidParamsStatus = "CANCELED"
 	PutStatusBidParamsStatusCREATED   PutStatusBidParamsStatus = "CREATED"
 	PutStatusBidParamsStatusPUBLISHED PutStatusBidParamsStatus = "PUBLISHED"
 )
@@ -55,9 +42,9 @@ const (
 
 // Defines values for PutStatusTenderParamsStatus.
 const (
-	CLOSED    PutStatusTenderParamsStatus = "CLOSED"
-	CREATED   PutStatusTenderParamsStatus = "CREATED"
-	PUBLISHED PutStatusTenderParamsStatus = "PUBLISHED"
+	PutStatusTenderParamsStatusCLOSED    PutStatusTenderParamsStatus = "CLOSED"
+	PutStatusTenderParamsStatusCREATED   PutStatusTenderParamsStatus = "CREATED"
+	PutStatusTenderParamsStatusPUBLISHED PutStatusTenderParamsStatus = "PUBLISHED"
 )
 
 // Bid defines model for Bid.
@@ -89,13 +76,9 @@ type BidCreateRequestStatus string
 
 // BidEditRequest defines model for BidEditRequest.
 type BidEditRequest struct {
-	Description string               `json:"description"`
-	Name        string               `json:"name"`
-	Status      BidEditRequestStatus `json:"status"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
 }
-
-// BidEditRequestStatus defines model for BidEditRequest.Status.
-type BidEditRequestStatus string
 
 // Feedback defines model for Feedback.
 type Feedback struct {
@@ -140,9 +123,9 @@ type TenderCreateRequestStatus string
 
 // TenderEditRequest defines model for TenderEditRequest.
 type TenderEditRequest struct {
-	Description string  `json:"description"`
-	Name        string  `json:"name"`
-	ServiceType *string `json:"serviceType,omitempty"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
+	ServiceType string `json:"serviceType"`
 }
 
 // FetchListByUserParams defines parameters for FetchListByUser.

@@ -80,15 +80,15 @@ func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tender transport.Tender
-	err = json.Unmarshal(b, &tender)
+	var tenderRequest transport.TenderEditRequest
+	err = json.Unmarshal(b, &tenderRequest)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	resp, err := h.tenderEdite.Edit(r.Context(), id[1], rq.Get(user), convert.TenderTransportToModel(tender))
+	resp, err := h.tenderEdite.Edit(r.Context(), id[1], rq.Get(user), convert.TenderReqEditTransportToModel(tenderRequest))
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -138,7 +138,6 @@ func (h *Handler) Rollback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tender, err := h.tenderEdite.Rollback(r.Context(), id[1], rq.Get(user), version[1])
-	// TODO: Валидно так? errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsible)
 	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsible) {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusForbidden)
@@ -179,6 +178,12 @@ func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 	status := "status"
 
 	if len(rq) > 3 || rq.Get(user) == "" || rq.Get(tenderId) == "" || rq.Get(status) == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if transport.PutStatusTenderParamsStatus(rq.Get(status)) != transport.PutStatusTenderParamsStatusCREATED && transport.PutStatusTenderParamsStatus(rq.Get(status)) != transport.PutStatusTenderParamsStatusCLOSED && transport.PutStatusTenderParamsStatus(rq.Get(status)) != transport.PutStatusTenderParamsStatusPUBLISHED {
+		h.log.Error(model.BadStatus.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
