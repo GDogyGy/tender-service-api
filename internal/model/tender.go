@@ -15,34 +15,33 @@ type Tender struct {
 	Responsible string
 }
 
-// TODO: Обсудить с димой замену рефлекту Возможно нужно проще if (id == "") d.Id = a.Id
-func (a *Tender) FillDefault(defaults *Tender) {
-	type field struct {
-		src  interface{}
-		dest interface{}
+func (t *Tender) FillDefault(tender Tender) {
+	if t.Id == "" {
+		t.Id = tender.Id
 	}
 
-	fields := []field{
-		{&a.Id, &defaults.Id},
-		{&a.Name, &defaults.Name},
-		{&a.Description, &defaults.Description},
-		{&a.ServiceType, &defaults.ServiceType},
-		{&a.Status, &defaults.Status},
-		{&a.Version, &defaults.Version},
-		{&a.Responsible, &defaults.Responsible},
+	if t.Name == "" {
+		t.Name = tender.Name
 	}
 
-	for _, f := range fields {
-		switch dest := f.dest.(type) {
-		case *string:
-			if *dest == "" {
-				*dest = *f.src.(*string)
-			}
-		case *int:
-			if *dest == 0 {
-				*dest = *f.src.(*int)
-			}
-		}
+	if t.Description == "" {
+		t.Description = tender.Description
+	}
+
+	if t.ServiceType == "" {
+		t.ServiceType = tender.ServiceType
+	}
+
+	if t.Status == "" {
+		t.Status = tender.Status
+	}
+
+	if t.Version == 0 {
+		t.Version = tender.Version
+	}
+
+	if t.Responsible == "" {
+		t.Responsible = tender.Responsible
 	}
 }
 

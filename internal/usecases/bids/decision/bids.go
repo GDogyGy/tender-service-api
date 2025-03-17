@@ -43,11 +43,6 @@ func NewService(r bidRepository, d decisionRepository, t tenderRepository, organ
 	return &Service{bid: r, decision: d, tender: t, organizationVerify: organizationVerify, tenderVerify: useCaseTenderVerify}
 }
 
-// SubmitDecision Если есть хотя бы одно решение reject, предложение отклоняется.
-// Для согласования предложения нужно получить решения больше или равно кворуму.
-// Кворум = min(3, количество ответственных за организацию).
-// Просмотр отзывов на прошлые предложения:
-// TODO: Обсудить с димой кворум, как его подмешать из другой бд к model.Bids, возможно контракт?
 func (s *Service) SubmitDecision(ctx context.Context, username string, bidID string, decision string, organizationID string) (model.Bids, error) {
 	var bid model.Bids
 	var quorume int

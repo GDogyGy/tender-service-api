@@ -36,7 +36,7 @@ func (s *Service) Edit(ctx context.Context, id string, username string, tenderNe
 		return model.Tender{}, err
 	}
 
-	tender.FillDefault(&tenderNew)
+	tenderNew.FillDefault(tender)
 
 	resp, err := s.tender.Edit(ctx, tenderNew, tender)
 	if err != nil {

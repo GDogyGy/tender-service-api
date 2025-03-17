@@ -36,5 +36,3 @@ integration-run:
 swagger-build:
 	oapi-codegen -generate types -package transport -o ./internal/handlers/types/transport/transport.go openapi.yaml
 
-# TODO: спросить у димы зачем handler swagger генерит oapi-codegen -generate types,server -package api -o api.gen.go openapi.yaml
-# Параметры по умолчанию для oapi-codegen сгенерируют все: клиент, сервер, определения типов и встроенную спецификацию swagger, но вы можете сгенерировать подмножества этих данных с помощью флага -generate. По умолчанию это types,client,server,spec, но вы можете указать любую их комбинацию.

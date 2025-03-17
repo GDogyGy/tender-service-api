@@ -3,12 +3,12 @@
 package test
 
 import (
+	tender "TenderServiceApi/internal/handlers/tender/fetch"
 	"bytes"
 	"net/http"
 	"net/http/httptest"
 )
 
-// TODO: получается без makefile не поднять тесты интеграционные. Спросить у димы валидно ли если докер поднимает тестовую базу только через makefile
 func (s *APITestSuite) TestTenderCreateHandler() {
 	url := "/api/tenders/new"
 

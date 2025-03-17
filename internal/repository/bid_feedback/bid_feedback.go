@@ -75,7 +75,6 @@ func (t *Repository) FetchReviews(ctx context.Context, tenderID string, authorUs
 
 func (t *Repository) CheckResponsible(ctx context.Context, username string, bidID string) (bool, error) {
 	const op = "repository.bidFeedback.CheckResponsible"
-	// TODO: Обсудить с димой: Улучшил запрос по сравнению с другими CheckResponsible в тендере
 	bidFeedback := t.db.QueryRowxContext(ctx, `SELECT exists(SELECT * FROM bids
                          left join tender t on t.id = bids.tender_id
                          left join organization_responsible o on t.responsible = o.organization_id
