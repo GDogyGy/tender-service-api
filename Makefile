@@ -25,14 +25,9 @@ reset-migrate:
 
 .PHONY: intergration-run
 integration-run:
-	goose -dir=./internal/storage/migrations postgres "host=localhost user=root port=5434 database=TenderApiTest password=123" up
-	sleep 10
 	go clean -testcache
 	@echo "${BG_GREEN}Run each test integration${RESET}"
-	go test -tags=integration -parallel=1 ./test/handlers/create
-	go test -tags=integration -parallel=1 ./test/handlers/edit
-	go test -tags=integration -parallel=1 ./test/handlers/rollback
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/create
 
 swagger-build:
 	oapi-codegen -generate types -package transport -o ./internal/handlers/types/transport/transport.go openapi.yaml
-

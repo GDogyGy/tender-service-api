@@ -1,0 +1,28 @@
+# employee.yml
+- id: "550e8400-e29b-41d4-a716-446655440001"
+  username: 'user1'
+  first_name: 'user_name_1'
+  last_name: 'user_last_name_1'
+  created_at: RAW=NOW()
+  updated_at: RAW=NOW()
+
+- id: "e69b35b6-9bd0-4a49-b7d1-3765c72c484e"
+  username: 'user2'
+  first_name: 'user_name_2'
+  last_name: 'user_last_name_2'
+  created_at: RAW=NOW()
+  updated_at: RAW=NOW()
+
+- id: "5ad1000e-0f7a-480f-8934-e6f5c6f3e69a"
+  username: 'user3'
+  first_name: 'user_name_3'
+  last_name: 'user_last_name_3'
+  created_at: RAW=NOW()
+  updated_at: RAW=NOW()
+
+- id: "f4c5ab0c-2a57-45e1-acc9-92aecbcb518d"
+  username: 'user4'
+  first_name: 'user_name_4'
+  last_name: 'user_last_name_4'
+  created_at: RAW=NOW()
+  updated_at: RAW=NOW()
