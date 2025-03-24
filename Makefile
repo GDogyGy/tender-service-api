@@ -25,9 +25,16 @@ reset-migrate:
 
 .PHONY: intergration-run
 integration-run:
+	# TODO: получается бинарник тестовой приложухи надо пересобирать через docker-compose чтобы тестить актуальное приложение -_-? и по другому не решить это
 	go clean -testcache
 	@echo "${BG_GREEN}Run each test integration${RESET}"
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/ping/fetch
 	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/create
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/update
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/create
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/update
 
 swagger-build:
 	oapi-codegen -generate types -package transport -o ./internal/handlers/types/transport/transport.go openapi.yaml

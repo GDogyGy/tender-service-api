@@ -2,10 +2,10 @@
 - id: "385a485c-c977-429d-88ee-72fec6aa0444"
   name: 'Предложение 1'
   description: 'Построю с отделкой комплекс под ключ'
-  status: CREATED
+  status: PUBLISHED
   tender_id: "81c19f2e-1ed3-46f9-bce3-aa0206caf30e"
   version: 1
-  responsible: "e69b35b6-9bd0-4a49-b7d1-3765c72c484e"
+  responsible: "27bd91a5-8882-4596-89ce-b9597364c81f"
 
 - id: "f28798c2-314b-4ba6-bb49-9ec23d8a2f65"
   name: 'Предложение 2'
@@ -13,7 +13,7 @@
   status: CREATED
   tender_id: "cc1f2b36-c45e-43c8-bca7-51112a43171b"
   version: 1
-  responsible: "550e8400-e29b-41d4-a716-446655440001"
+  responsible: "bf30cf8e-14e2-4c22-8f91-72cca8a284b8"
 
 - id: "56289f77-873e-4a18-b71c-ffa5ea53e89c"
   name: 'Предложение 3'
@@ -21,7 +21,7 @@
   status: CREATED
   tender_id: "69745efb-d2f7-4e6a-bff2-187ca6bc4e36"
   version: 1
-  responsible: "550e8400-e29b-41d4-a716-446655440001"
+  responsible: "bf30cf8e-14e2-4c22-8f91-72cca8a284b8"
 
 - id: "0e02782f-7891-4813-86f2-074bb6702ab3"
   name: 'Предложение 4'
@@ -29,4 +29,4 @@
   status: CREATED
   tender_id: "81c19f2e-1ed3-46f9-bce3-aa0206caf30e"
   version: 1
-  responsible: "5ad1000e-0f7a-480f-8934-e6f5c6f3e69a"
+  responsible: "0473a281-29c8-4dc5-a8b8-f96c844e67a7"

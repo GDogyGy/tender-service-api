@@ -35,6 +35,7 @@ func setup() error {
 	if Db, err = client.InitStorageDB(); err != nil {
 		return err
 	}
+
 	return nil
 }
 

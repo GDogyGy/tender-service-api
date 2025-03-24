@@ -5,7 +5,7 @@
   service_type: Building
   status: CREATED
   version: 1
-  responsible: "550e8400-e29b-41d4-a716-446655440001"
+  responsible: "550e8400-e29b-41d4-a716-446655440000"
 
 - id: "69745efb-d2f7-4e6a-bff2-187ca6bc4e36"
   name: 'Tender: Development Farmers Web App'
@@ -13,7 +13,7 @@
   service_type: Development
   status: PUBLISHED
   version: 1
-  responsible: "550e8400-e29b-41d4-a716-446655440001"
+  responsible: "550e8400-e29b-41d4-a716-446655440000"
 
 - id: "81c19f2e-1ed3-46f9-bce3-aa0206caf30e"
   name: 'Tender: Development Sellers Web App'
@@ -21,7 +21,7 @@
   service_type: Development
   status: PUBLISHED
   version: 1
-  responsible: "e69b35b6-9bd0-4a49-b7d1-3765c72c484e"
+  responsible: "109dae74-bbf6-484b-8b2b-ab7c97967905"
 
 - id: "9ac9add4-53cc-4bfc-bf59-5450a4539e27"
   name: 'Tender: inspect restaurant'
@@ -29,4 +29,4 @@
   service_type: Examination
   status: CLOSED
   version: 1
-  responsible: "e69b35b6-9bd0-4a49-b7d1-3765c72c484e"
+  responsible: "109dae74-bbf6-484b-8b2b-ab7c97967905"
