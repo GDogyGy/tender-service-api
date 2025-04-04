@@ -163,10 +163,9 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Tender) (model.
 
 func (t *Repository) Edit(ctx context.Context, tenderNew model.Tender, tender model.Tender) (model.Tender, error) {
 	const op = "repository.tender.Edit"
-	var r row
-	tenderNew.Version = tender.Version + 1
 
-	r = toRow(tenderNew)
+	r := toRow(tenderNew)
+
 	q := `INSERT INTO tender (id, name, description, service_type, status, version, responsible) VALUES ($1,$2,$3,$4,$5,$6,$7)`
 	result, err := t.db.QueryxContext(ctx, q, r.Id, r.Name, r.Description, r.ServiceType, r.Status, r.Version, r.Responsible)
 	if err != nil {

@@ -13,20 +13,24 @@ type Service struct {
 	useCaseBidsVerify   useCaseBidsVerify
 }
 
+//go:generate mockery --inpackage --name=repository --exported --testonly --inpackage-suffix
 type repository interface {
 	FetchListByTender(ctx context.Context, tenderId string) ([]model.Bids, error)
 	FetchListByUser(ctx context.Context, username string) ([]model.Bids, error)
 	FetchById(ctx context.Context, bidsId string) (model.Bids, error)
 }
 
+//go:generate mockery --inpackage --name=bidFeedback --exported --testonly --inpackage-suffix
 type bidFeedback interface {
 	FetchReviews(ctx context.Context, tenderID string, authorUsername string, organizationID string) ([]model.BidFeedback, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseTenderVerify --exported --testonly --inpackage-suffix
 type useCaseTenderVerify interface {
 	CheckResponsible(ctx context.Context, username string, tenderId string) (bool, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseBidsVerify --exported --testonly --inpackage-suffix
 type useCaseBidsVerify interface {
 	CheckResponsible(ctx context.Context, username string, bidsId string) (bool, error)
 }

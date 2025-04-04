@@ -171,10 +171,8 @@ func (t *Repository) UpdateStatus(ctx context.Context, bidID string, status stri
 
 func (t *Repository) Edit(ctx context.Context, bidNew model.Bids, bid model.Bids) (model.Bids, error) {
 	const op = "repository.bids.Edit"
-	var r row
-	bidNew.Version = bid.Version + 1
-
-	r = toRow(bidNew)
+	r := toRow(bidNew)
+	
 	q := `INSERT INTO bids (id, name, description, status, tender_id, version, responsible) VALUES ($1,$2,$3,$4,$5,$6,$7)`
 	result, err := t.db.QueryxContext(ctx, q, r.Id, r.Name, r.Description, r.Status, r.TenderId, r.Version, r.Responsible)
 	if err != nil {

@@ -10,6 +10,7 @@ type Service struct {
 	bidsVerify useCaseBidVerify
 }
 
+//go:generate mockery --inpackage --name=repository --exported --testonly --inpackage-suffix
 type repository interface {
 	Edit(ctx context.Context, bidNew model.Bids, bid model.Bids) (model.Bids, error)
 	Rollback(ctx context.Context, id string, version string) (model.Bids, error)
@@ -17,6 +18,7 @@ type repository interface {
 	UpdateStatus(ctx context.Context, bidID string, status string) (model.Bids, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseBidVerify --exported --testonly --inpackage-suffix
 type useCaseBidVerify interface {
 	CheckResponsible(ctx context.Context, username string, bidID string) (bool, error)
 }
@@ -37,7 +39,7 @@ func (s *Service) Edit(ctx context.Context, id string, username string, bidNew m
 	}
 
 	bidNew.FillDefault(bid)
-
+	bidNew.Version = bid.Version + 1
 	resp, err := s.bid.Edit(ctx, bidNew, bid)
 	if err != nil {
 		return model.Bids{}, err

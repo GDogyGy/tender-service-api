@@ -10,6 +10,7 @@ type Service struct {
 	useCaseTenderVerify useCaseTenderVerify
 }
 
+//go:generate mockery --inpackage --name=repository --exported --testonly --inpackage-suffix
 type repository interface {
 	Edit(ctx context.Context, tenderNew model.Tender, tender model.Tender) (model.Tender, error)
 	FetchById(ctx context.Context, tenderId string) (model.Tender, error)
@@ -17,6 +18,7 @@ type repository interface {
 	UpdateStatus(ctx context.Context, tenderId string, status string) (model.Tender, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseTenderVerify --exported --testonly --inpackage-suffix
 type useCaseTenderVerify interface {
 	CheckResponsible(ctx context.Context, username string, tenderId string) (bool, error)
 }
@@ -37,9 +39,10 @@ func (s *Service) Edit(ctx context.Context, id string, username string, tenderNe
 	}
 
 	tenderNew.FillDefault(tender)
+	tenderNew.Version = tender.Version + 1
 
 	resp, err := s.tender.Edit(ctx, tenderNew, tender)
-	if err != nil {
+	if err != nil { // TODO: оказывается эту штуку не так просто проверить
 		return model.Tender{}, err
 	}
 

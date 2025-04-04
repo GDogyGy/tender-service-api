@@ -14,27 +14,29 @@ type Service struct {
 	tenderVerify       useCaseTenderVerify
 }
 
+//go:generate mockery --inpackage --name=bidRepository --exported --testonly --inpackage-suffix
 type bidRepository interface {
 	FetchById(ctx context.Context, bidID string) (model.Bids, error)
 	UpdateStatus(ctx context.Context, bidID string, status string) (model.Bids, error)
 }
 
+//go:generate mockery --inpackage --name=decisionRepository --exported --testonly --inpackage-suffix
 type decisionRepository interface {
 	Save(ctx context.Context, bidID string, decision string, responsible string) error
 	FetchByBidID(ctx context.Context, bidID string) ([]model.BidsDecisions, error)
 }
 
+//go:generate mockery --inpackage --name=tenderRepository --exported --testonly --inpackage-suffix
 type tenderRepository interface {
 	UpdateStatus(ctx context.Context, tenderId string, status string) (model.Tender, error)
 }
 
-type UseCaseBidsEdit interface {
-}
-
+//go:generate mockery --inpackage --name=useCaseTenderVerify --exported --testonly --inpackage-suffix
 type useCaseTenderVerify interface {
 	CheckResponsible(ctx context.Context, username string, tenderId string) (bool, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseOrganizationVerify --exported --testonly --inpackage-suffix
 type useCaseOrganizationVerify interface {
 	CheckResponsible(ctx context.Context, username string, organizationId string) (model.OrganizationResponsible, error)
 }
