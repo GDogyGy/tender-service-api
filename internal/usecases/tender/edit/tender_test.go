@@ -44,9 +44,16 @@ func TestUseCaseEdit(t *testing.T) {
 			prepare: func(repository *Mockrepository, verify *MockuseCaseTenderVerify, tenderNew model.Tender, tender model.Tender) {
 				verify.On("CheckResponsible", mock.Anything, "user1", "1").Return(true, nil)
 				repository.On("FetchById", mock.Anything, "1").Return(tender, nil)
-
-				tenderNew.FillDefault(tender)
-				tenderNew.Version = 2
+				_ = tenderNew
+				tenderNew = model.Tender{
+					Id:          "1",
+					Name:        "New Name",
+					Description: "New Description",
+					ServiceType: "New ServiceType",
+					Status:      "PUBLISHED",
+					Version:     2,
+					Responsible: "1",
+				}
 
 				repository.On("Edit", mock.Anything, tenderNew, tender).Return(tenderNew, nil)
 			},
@@ -88,36 +95,37 @@ func TestUseCaseEdit(t *testing.T) {
 			},
 		},
 
-		// {
-		//	name:     "Error Edit",
-		//	ctx:      context.Background(),
-		//	username: "user1",
-		//	id:       "1",
-		//	tender: model.Tender{
-		//		Id:          "1",
-		//		Name:        "test",
-		//		Description: "test",
-		//		ServiceType: "test",
-		//		Status:      "PUBLISHED",
-		//		Version:     1,
-		//		Responsible: "1",
-		//	},
-		//	tenderNew: model.Tender{
-		//		Name:        "New Name",
-		//		Description: "New Description",
-		//		ServiceType: "New ServiceType",
-		//	},
-		//	prepare: func(repository *Mockrepository, verify *MockuseCaseTenderVerify, tenderNew model.Tender, tender model.Tender) {
-		//		verify.On("CheckResponsible", mock.Anything, "user1", "1").Return(true, nil)
-		//		repository.On("FetchById", mock.Anything, "1").Return(tender, nil)
-		//
-		//		repository.On("Edit", mock.Anything, tenderNew, tender).Return(model.Tender{}, fmt.Errorf("error edit"))
-		//	},
-		//	expectations: func(t *testing.T, result model.Tender, err error) {
-		//		assert.Error(t, err)
-		//		assert.Empty(t, result)
-		//	},
-		// },
+		{
+			name:     "Error Edit",
+			ctx:      context.Background(),
+			username: "user1",
+			id:       "1",
+			tender: model.Tender{
+				Id:          "1",
+				Name:        "test",
+				Description: "test",
+				ServiceType: "test",
+				Status:      "PUBLISHED",
+				Version:     1,
+				Responsible: "1",
+			},
+			tenderNew: model.Tender{
+				Name:        "New Name",
+				Description: "New Description",
+				ServiceType: "New ServiceType",
+			},
+			prepare: func(repository *Mockrepository, verify *MockuseCaseTenderVerify, tenderNew model.Tender, tender model.Tender) {
+				verify.On("CheckResponsible", mock.Anything, "user1", "1").Return(true, nil)
+				repository.On("FetchById", mock.Anything, "1").Return(tender, nil)
+				tenderNew.FillDefault(tender)
+				tenderNew.Version = tender.Version + 1
+				repository.On("Edit", mock.Anything, tenderNew, tender).Return(model.Tender{}, fmt.Errorf("error edit"))
+			},
+			expectations: func(t *testing.T, result model.Tender, err error) {
+				assert.Error(t, err)
+				assert.Empty(t, result)
+			},
+		},
 	}
 
 	for _, tc := range cases {

@@ -1,9 +1,8 @@
 package decision
 
 import (
-	"context"
-
 	"TenderServiceApi/internal/model"
+	"context"
 )
 
 type Service struct {

@@ -5,7 +5,6 @@ package test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -30,8 +29,6 @@ func TestFetchListByUserHandler(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	fmt.Println(err)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)

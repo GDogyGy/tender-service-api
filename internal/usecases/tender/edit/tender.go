@@ -40,9 +40,8 @@ func (s *Service) Edit(ctx context.Context, id string, username string, tenderNe
 
 	tenderNew.FillDefault(tender)
 	tenderNew.Version = tender.Version + 1
-
 	resp, err := s.tender.Edit(ctx, tenderNew, tender)
-	if err != nil { // TODO: оказывается эту штуку не так просто проверить
+	if err != nil {
 		return model.Tender{}, err
 	}
 

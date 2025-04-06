@@ -11,14 +11,17 @@ type Service struct {
 	useCaseOrganizationVerify useCaseOrganizationVerify
 }
 
+//go:generate mockery --inpackage --name=repository --exported --testonly --inpackage-suffix
 type repository interface {
 	FetchReviews(ctx context.Context, tenderID string, authorUsername string, organizationID string) ([]model.BidFeedback, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseTenderVerify --exported --testonly --inpackage-suffix
 type useCaseTenderVerify interface {
 	CheckResponsible(ctx context.Context, username string, tenderId string) (bool, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseOrganizationVerify --exported --testonly --inpackage-suffix
 type useCaseOrganizationVerify interface {
 	CheckResponsible(ctx context.Context, username string, organizationId string) (model.OrganizationResponsible, error)
 }

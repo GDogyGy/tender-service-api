@@ -6,23 +6,27 @@ import (
 )
 
 type Service struct {
-	bidFeedback              repository
+	bidFeedback              repositoryFeedback
 	organization             repositoryOrganization
 	useCaseBidFeedbackVerify useCaseBidFeedbackVerify
 }
 
-type repository interface {
+//go:generate mockery --inpackage --name=repositoryFeedback --exported --testonly --inpackage-suffix
+type repositoryFeedback interface {
 	Create(ctx context.Context, saveModel model.BidFeedback) (model.BidFeedback, error)
 }
 
+//go:generate mockery --inpackage --name=repositoryOrganization --exported --testonly --inpackage-suffix
 type repositoryOrganization interface {
 	FetchByUserName(ctx context.Context, username string) (model.OrganizationResponsible, error)
 }
+
+//go:generate mockery --inpackage --name=useCaseBidFeedbackVerify --exported --testonly --inpackage-suffix
 type useCaseBidFeedbackVerify interface {
 	CheckResponsible(ctx context.Context, username string, bidID string) (bool, error)
 }
 
-func NewService(r repository, o repositoryOrganization, useCaseBidFeedbackVerify useCaseBidFeedbackVerify) *Service {
+func NewService(r repositoryFeedback, o repositoryOrganization, useCaseBidFeedbackVerify useCaseBidFeedbackVerify) *Service {
 	return &Service{bidFeedback: r, organization: o, useCaseBidFeedbackVerify: useCaseBidFeedbackVerify}
 }
 
