@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	bids "TenderServiceApi/internal/handlers/bids/fetch"
+	bids "TenderServiceApi/internal/handlers/rest/bids/fetch"
 	"TenderServiceApi/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

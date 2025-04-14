@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"TenderServiceApi/internal/handlers/types/transport"
+	"TenderServiceApi/internal/handlers/rest/types/transport"
 	"TenderServiceApi/internal/model"
 )
 

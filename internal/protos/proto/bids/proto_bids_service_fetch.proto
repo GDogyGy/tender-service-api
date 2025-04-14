@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package fetch;
+option go_package = "/gen/bids/fetch";
+
+service BidsServiceFetch {
+  rpc FetchListByTender(BidsRequestFetchListV1) returns (ResponseBidsV1);
+  rpc FetchListByUser(BidsRequestFetchListByUserV1) returns (ResponseBidsV1);
+  rpc FetchStatus(BidsRequestFetchStatusV1) returns (BidsResponseFetchStatusV1);
+  rpc FetchReviews(BidsRequestFetchReviewsV1) returns (BidsResponseFetchReviewsV1);
+}
+
+message BidV1 {
+  string Id = 1;
+  string Description = 2;
+  string Name = 3;
+  string Responsible = 4;
+  string Status = 5;
+  string TenderId = 6;
+  int32 Version = 7;
+}
+
+message FeedbackV1 {
+  string Id = 1;
+  string BidId = 2;
+  string Description = 3;
+  string Responsible = 4;
+  string CreatedAt = 5;
+}
+
+message BidsRequestFetchListV1 {
+  string Username = 1;
+  string TenderID = 2;
+}
+
+message BidsRequestFetchListByUserV1 {
+  string Username = 1;
+}
+
+message ResponseBidsV1 {
+  repeated BidV1 bids = 1;
+}
+
+message BidsRequestFetchStatusV1 {
+  string Username = 1;
+  string BidID = 2;
+}
+
+message BidsResponseFetchStatusV1 {
+  string Status = 1;
+}
+
+message BidsRequestFetchReviewsV1 {
+  string Username = 1;
+  string TenderId = 2;
+  string OrganizationId = 3;
+  string AuthorUsername = 4;
+}
+
+message BidsResponseFetchReviewsV1 {
+  repeated FeedbackV1 feedback = 1;
+}

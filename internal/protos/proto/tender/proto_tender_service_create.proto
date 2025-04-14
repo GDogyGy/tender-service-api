@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package create;
+option go_package = "/gen/tender/create";
+
+service TenderServiceCreate {
+  rpc Create(RequestCreateV1) returns (TenderV1);
+}
+
+message TenderV1 {
+  string Id = 1;
+  string Name = 2;
+  string Description = 3;
+  string ServiceType = 4;
+  string Status = 5;
+  int32 Version = 6;
+  string Responsible = 7;
+}
+
+message RequestCreateV1 {
+  string CreatorUsername = 1;
+  string Description = 2;
+  string Name = 3;
+  string OrganizationId = 4;
+  string ServiceType = 5;
+  string Status = 6;
+}

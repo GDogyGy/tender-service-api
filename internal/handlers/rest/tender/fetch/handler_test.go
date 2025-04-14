@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	tender "TenderServiceApi/internal/handlers/tender/fetch"
+	tender "TenderServiceApi/internal/handlers/rest/tender/fetch"
 	"TenderServiceApi/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

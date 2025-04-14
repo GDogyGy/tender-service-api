@@ -1,7 +1,7 @@
 package fetch_test
 
 import (
-	ping "TenderServiceApi/internal/handlers/ping/fetch"
+	ping "TenderServiceApi/internal/handlers/rest/ping/fetch"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package fetch;
+option go_package = "/gen/tender/fetch";
+
+service TenderServiceFetch {
+  rpc FetchList(RequestFetchListV1) returns (ResponseTendersV1);
+  rpc FetchListByUser(RequestFetchListByUserV1) returns (ResponseTendersV1);
+  rpc FetchStatus(RequestFetchStatusV1) returns (ResponseFetchStatusV1);
+}
+
+message TenderV1 {
+  string Id = 1;
+  string Name = 2;
+  string Description = 3;
+  string ServiceType = 4;
+  string Status = 5;
+  int32 Version = 6;
+  string Responsible = 7;
+}
+
+message RequestFetchListV1 {
+  string serviceType = 1;
+}
+
+message RequestFetchListByUserV1 {
+  string Username = 1;
+}
+
+message ResponseTendersV1 {
+  repeated TenderV1 tenders = 1;
+}
+
+message RequestFetchStatusV1 {
+  string Username = 1;
+  string TenderId = 2;
+}
+message ResponseFetchStatusV1 {
+  string Status = 1;
+}

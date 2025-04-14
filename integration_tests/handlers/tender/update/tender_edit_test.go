@@ -11,7 +11,7 @@ import (
 
 	"TenderServiceApi/integration_tests/helpers/db/client"
 	"TenderServiceApi/integration_tests/helpers/server/request"
-	"TenderServiceApi/internal/handlers/types/transport"
+	"TenderServiceApi/internal/handlers/rest/types/transport"
 	"github.com/stretchr/testify/assert"
 )
 

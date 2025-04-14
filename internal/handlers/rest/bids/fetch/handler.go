@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"regexp"
 
-	"TenderServiceApi/internal/handlers/types/convert"
-	"TenderServiceApi/internal/handlers/types/transport"
+	"TenderServiceApi/internal/handlers/rest/types/convert"
+	"TenderServiceApi/internal/handlers/rest/types/transport"
 	"TenderServiceApi/internal/model"
 )
 

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package update;
+option go_package = "/gen/tender/update";
+
+service TenderServiceUpdate {
+  rpc Edit(RequestEditV1) returns (TenderV1);
+  rpc Rollback(RequestRollbackV1) returns (TenderV1);
+  rpc Status(RequestStatusV1) returns (ResponseStatusV1);
+}
+
+message TenderV1 {
+  string Id = 1;
+  string Name = 2;
+  string Description = 3;
+  string ServiceType = 4;
+  string Status = 5;
+  int32 Version = 6;
+  string Responsible = 7;
+}
+
+message RequestEditV1 {
+  string Username = 1;
+  string TenderId = 2;
+  string Description = 3;
+  string Name = 4;
+  string ServiceType = 5;
+}
+
+message RequestRollbackV1 {
+  string Username = 1;
+  string TenderId = 2;
+  string Version = 3;
+}
+
+message RequestStatusV1 {
+  string Username = 1;
+  string TenderId = 2;
+  string Status = 3;
+}
+message ResponseStatusV1 {
+  string Status = 1;
+}
