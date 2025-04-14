@@ -28,16 +28,17 @@ integration-run:
 	# TODO: получается бинарник тестовой приложухи надо пересобирать через docker-compose чтобы тестить актуальное приложение -_-? и по другому не решить это
 	go clean -testcache
 	@echo "${BG_GREEN}Run each test integration${RESET}"
-	go test -tags=integration -parallel=1 ./integration_tests/handlers/rest/ping/fetch
-	go test -tags=integration -parallel=1 ./integration_tests/handlers/rest/tender/create
-	go test -tags=integration -parallel=1 ./integration_tests/handlers/rest/tender/fetch
-	go test -tags=integration -parallel=1 ./integration_tests/handlers/rest/tender/update
-	go test -tags=integration -parallel=1 ./integration_tests/handlers/rest/bids/create
-	go test -tags=integration -parallel=1 ./integration_tests/handlers/rest/bids/fetch
-	go test -tags=integration -parallel=1 ./integration_tests/handlers/rest/bids/update
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/ping/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/create
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/update
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/create
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/update
 
 swagger-build:
 	oapi-codegen -generate types -package transport -o ./internal/handlers/rest/types/transport/transport.go openapi.yaml
+
 proto-gen:
 	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/tender/proto_tender_service_create.proto
 	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/tender/proto_tender_service_fetch.proto
