@@ -27,6 +27,7 @@ import (
 	tenderCreate "TenderServiceApi/internal/handlers/rest/tender/create"
 	tenderFetch "TenderServiceApi/internal/handlers/rest/tender/fetch"
 	tenderUpdate "TenderServiceApi/internal/handlers/rest/tender/update"
+	"TenderServiceApi/internal/kafka"
 	bidDecisionRepository "TenderServiceApi/internal/repository/bid_decision"
 	bidFeedbackRepository "TenderServiceApi/internal/repository/bid_feedback"
 	bidsRepository "TenderServiceApi/internal/repository/bids"
@@ -71,7 +72,14 @@ func main() {
 	}
 
 	defer storage.Close()
-
+	// <! kafka init
+	producer, err := kafka.NewEventProducer(cfg.Kafka.GetAddresses(), cfg.Kafka.DefaultTopic)
+	if err != nil {
+		log.Error("Failed to init kafka", slog.Attr{Value: slog.StringValue(err.Error())})
+		os.Exit(1) // nolint:gocritic
+	}
+	defer func() { _ = producer.Close() }()
+	// kafka init !>
 	router := http.NewServeMux()
 
 	// <! Repository
@@ -112,7 +120,7 @@ func main() {
 	// Handler Tender !>
 
 	// <! Handler Bids
-	handlerBidsCreate := bidsCreate.NewHandler(log, useCaseBidsCreate, useCaseBidFeedbackCreate)
+	handlerBidsCreate := bidsCreate.NewHandler(log, producer, useCaseBidsCreate, useCaseBidFeedbackCreate)
 	handlerBidsFetch := bidsFetch.NewHandler(log, useCaseBidsFetch, useCaseBidFeedbackFetch)
 	handlerBidsUpdate := bidsUpdate.NewHandler(log, useCaseBidsEdit, useCaseBidsDecision)
 	// Handler Bids !>
@@ -167,10 +175,10 @@ func main() {
 }
 
 func StartServerHttp(ctx context.Context, cfg *config.Config, log *slog.Logger, router http.Handler) {
-	log.Info("http server starting", slog.String("address", cfg.Address))
+	log.Info("http server starting", slog.String("address", cfg.HTTPServer.Address))
 
 	srv := &http.Server{
-		Addr:         cfg.Address,
+		Addr:         cfg.HTTPServer.Address,
 		Handler:      router,
 		ReadTimeout:  cfg.Timeout,
 		WriteTimeout: cfg.Timeout,
@@ -191,11 +199,11 @@ func StartServerHttp(ctx context.Context, cfg *config.Config, log *slog.Logger, 
 }
 
 func StartServerGrpc(ctx context.Context, cfg *config.Config, log *slog.Logger, gRPCServer *grpc.Server) {
-	log.Info("grpc server starting", slog.String("address", "localhost:8081"))
+	log.Info("grpc server starting", slog.String("address", cfg.GRPCServer.Address))
 
 	_ = cfg
 
-	lis, err := net.Listen("tcp", "localhost:8081")
+	lis, err := net.Listen("tcp", cfg.GRPCServer.Address)
 	if err != nil {
 		log.Error("gRPC listen error:", slog.String("error", err.Error()))
 		return

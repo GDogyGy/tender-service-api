@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -11,7 +12,9 @@ import (
 type Config struct {
 	Env        string `yaml:"ENV" env:"ENV" env-default:"local" env-required:"true"`
 	HTTPServer `yaml:"HTTP_SERVER"`
+	GRPCServer `yaml:"GRPC_SERVER"`
 	Postgres   `yaml:"POSTGRES"`
+	Kafka      `yaml:"KAFKA"`
 	DebugLevel string `yaml:"DEBUG_LEVEL" env:"DEBUG_LEVEL" env-default:"info"`
 }
 
@@ -19,6 +22,15 @@ type HTTPServer struct {
 	Address     string        `yaml:"SERVER_ADDRESS" env:"SERVER_ADDRESS" env-default:"localhost:8080" env-required:"true"`
 	Timeout     time.Duration `yaml:"TIMEOUT" env:"TIMEOUT" env-default:"6s"`
 	IdleTimeout time.Duration `yaml:"IDLE_TIMEOUT" env:"IDLE_TIMEOUT" env-default:"60s"`
+}
+
+type GRPCServer struct {
+	Address string `yaml:"SERVER_ADDRESS" env:"SERVER_ADDRESS" env-default:"localhost:8081" env-required:"true"`
+}
+
+type Kafka struct {
+	Address      string `yaml:"KAFKA_ADDRESS" env:"KAFKA_ADDRESS" env-default:"localhost:29092" env-required:"true"`
+	DefaultTopic string `yaml:"KAFKA_DEFAULT_TOPIC" env:"KAFKA_DEFAULT_TOPIC" env-default:"model-events" env-required:"true"`
 }
 
 type Postgres struct {
@@ -29,6 +41,10 @@ type Postgres struct {
 	PostgresHost     string `yaml:"POSTGRES_HOST" env:"POSTGRES_HOST" env-default:"localhost" env-required:"true"`
 	PostgresPort     string `yaml:"POSTGRES_PORT" env:"POSTGRES_PORT" env-default:"5432" env-required:"true"`
 	PostgresDatabase string `yaml:"POSTGRES_DATABASE" env:"POSTGRES_DATABASE" env-default:"TenderApi" env-required:"true"`
+}
+
+func (k *Kafka) GetAddresses() []string {
+	return strings.Split(k.Address, ",")
 }
 
 func MustLoad() *Config {

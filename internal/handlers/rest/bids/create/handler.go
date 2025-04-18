@@ -18,6 +18,11 @@ type log interface {
 	Error(msg string, args ...any)
 }
 
+type producer interface {
+	SendEvent(eventType string, model interface{}) error
+	SendAsync(eventType string, model interface{})
+}
+
 type useCaseBidsCreate interface {
 	Create(ctx context.Context, creatorUsername string, organizationId string, saveModel model.Bids) (model.Bids, error)
 }
@@ -28,13 +33,14 @@ type useCaseBidFeedbackCreate interface {
 
 type Handler struct {
 	log                      log
+	producer                 producer
 	useCaseBidsCreate        useCaseBidsCreate
 	useCaseBidFeedbackCreate useCaseBidFeedbackCreate
 }
 
-func NewHandler(l log, useCaseBidsCreate useCaseBidsCreate, useCaseBidFeedbackCreate useCaseBidFeedbackCreate) Handler {
+func NewHandler(l log, p producer, useCaseBidsCreate useCaseBidsCreate, useCaseBidFeedbackCreate useCaseBidFeedbackCreate) Handler {
 	return Handler{
-		l, useCaseBidsCreate, useCaseBidFeedbackCreate,
+		l, p, useCaseBidsCreate, useCaseBidFeedbackCreate,
 	}
 }
 
@@ -93,6 +99,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bid := convert.BidsModelToTransport(resp)
+
+	err = h.producer.SendEvent("bids_created", bid)
+	if err != nil {
+		h.log.Error("Error kafka handler" + err.Error())
+	}
+
 	b, err = json.Marshal(bid)
 	if err != nil {
 		h.log.Error(err.Error())
