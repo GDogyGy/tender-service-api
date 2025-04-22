@@ -33,7 +33,6 @@ func DeleteAllCollections(ctx context.Context, db *sqlx.DB) error {
 }
 
 func PrepareDB(ctx context.Context, db *sqlx.DB) error {
-	// TODO обсудить пути
 	_, filename, _, _ := runtime.Caller(0)
 	currentDir := path.Dir(filename)
 	fixtureDir := path.Join(currentDir, "..", "fixtures")

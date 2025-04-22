@@ -161,13 +161,13 @@ func main() {
 	wg.Add(2)
 
 	go func() {
-		defer wg.Done()
 		StartServerHttp(ctx, cfg, log, router)
+		wg.Done()
 	}()
 
 	go func() {
-		defer wg.Done()
 		StartServerGrpc(ctx, cfg, log, gRPCServer)
+		wg.Done()
 	}()
 
 	wg.Wait()
