@@ -21,14 +21,20 @@ type useCasesTenderCreate interface {
 	Create(ctx context.Context, creatorUsername string, organizationId string, saveModel model.Tender) (model.Tender, error)
 }
 
+type producer interface {
+	SendEvent(eventType string, model interface{}) error
+	SendAsync(eventType string, model interface{})
+}
+
 type Handler struct {
 	log                  log
+	producer             producer
 	useCasesTenderCreate useCasesTenderCreate
 }
 
-func NewHandler(l log, useCasesTenderCreate useCasesTenderCreate) Handler {
+func NewHandler(l log, p producer, useCasesTenderCreate useCasesTenderCreate) Handler {
 	return Handler{
-		l, useCasesTenderCreate,
+		l, p, useCasesTenderCreate,
 	}
 }
 
@@ -82,7 +88,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err = json.Marshal(convert.TenderModelToTransport(resp))
+	tender := convert.TenderModelToTransport(resp)
+
+	err = h.producer.SendEvent("tender_created", tender)
+	if err != nil {
+		h.log.Error("Error kafka handler" + err.Error())
+	}
+
+	b, err = json.Marshal(tender)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

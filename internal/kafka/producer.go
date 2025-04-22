@@ -3,9 +3,10 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/IBM/sarama"
 	"log"
 	"time"
+
+	"github.com/IBM/sarama"
 )
 
 type Producer struct {
@@ -46,7 +47,11 @@ func (p *Producer) SendEvent(eventType string, model interface{}) error {
 	}
 
 	_, _, err = p.Producer.SendMessage(msg)
-	return fmt.Errorf("%s:%v", op, err)
+	if err != nil {
+		return fmt.Errorf("%s:%v", op, err)
+	}
+
+	return nil
 }
 
 func (p *Producer) SendAsync(eventType string, model interface{}) {

@@ -115,7 +115,7 @@ func main() {
 
 	// <! Handler Tender
 	handlerTenderFetch := tenderFetch.NewHandler(log, useCaseTenderFetch)
-	handlerTenderCreate := tenderCreate.NewHandler(log, UseCaseTenderCreate)
+	handlerTenderCreate := tenderCreate.NewHandler(log, producer, UseCaseTenderCreate)
 	handlerTenderUpdate := tenderUpdate.NewHandler(log, useCaseTenderEdit)
 	// Handler Tender !>
 
