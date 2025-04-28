@@ -24,8 +24,14 @@ type useCaseTenderEdite interface {
 	Status(ctx context.Context, username string, tenderId string, status string) (model.Tender, error)
 }
 
+type producer interface {
+	SendEvent(eventType string, model interface{}) error
+	SendAsync(eventType string, model interface{})
+}
+
 type Handler struct {
 	log         log
+	producer    producer
 	tenderEdite useCaseTenderEdite
 }
 
@@ -33,9 +39,9 @@ var tenderEditeRegexp = regexp.MustCompile(`/tenders/(.*)/edit`)
 var tenderIdRollbackRegexp = regexp.MustCompile(`/tenders/(.*)/rollback/`)
 var tenderVersionRollbackRegexp = regexp.MustCompile(`/rollback/(.*)\?`)
 
-func NewHandler(l log, t useCaseTenderEdite) Handler {
+func NewHandler(l log, p producer, t useCaseTenderEdite) Handler {
 	return Handler{
-		l, t,
+		l, p, t,
 	}
 }
 
@@ -203,6 +209,11 @@ func (h *Handler) Status(w http.ResponseWriter, r *http.Request) {
 		h.log.Error("FetchTenderStatus error: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	err = h.producer.SendEvent("tender_published", tender)
+	if err != nil {
+		h.log.Error("Error kafka handler" + err.Error())
 	}
 
 	b, err := json.Marshal(convert.TenderModelToTransport(tender))
