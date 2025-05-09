@@ -31,24 +31,29 @@ type useCaseBidFeedbackCreate interface {
 	Create(ctx context.Context, creatorUsername string, tenderID string, saveModel model.BidFeedback) (model.BidFeedback, error)
 }
 
+type prometheusMiddleware interface {
+	PrometheusMiddleware(handlerName string, next http.HandlerFunc) http.Handler
+}
+
 type Handler struct {
 	log                      log
+	prometheus               prometheusMiddleware
 	producer                 producer
 	useCaseBidsCreate        useCaseBidsCreate
 	useCaseBidFeedbackCreate useCaseBidFeedbackCreate
 }
 
-func NewHandler(l log, p producer, useCaseBidsCreate useCaseBidsCreate, useCaseBidFeedbackCreate useCaseBidFeedbackCreate) Handler {
+func NewHandler(l log, pm prometheusMiddleware, p producer, useCaseBidsCreate useCaseBidsCreate, useCaseBidFeedbackCreate useCaseBidFeedbackCreate) Handler {
 	return Handler{
-		l, p, useCaseBidsCreate, useCaseBidFeedbackCreate,
+		l, pm, p, useCaseBidsCreate, useCaseBidFeedbackCreate,
 	}
 }
 
 var bidFeedbackID = regexp.MustCompile(`/api/bids/(.*)/feedback\?`)
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodPost+" /api/bids/new", h.Create)
-	router.HandleFunc(http.MethodPut+" /api/bids/{bidId}/feedback", h.Feedback)
+	router.Handle(http.MethodPost+" /api/bids/new", h.prometheus.PrometheusMiddleware("bidsCreate", h.Create))
+	router.Handle(http.MethodPut+" /api/bids/{bidId}/feedback", h.prometheus.PrometheusMiddleware("bidsFeedback", h.Feedback))
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +69,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer func() {
-		r.Body.Close()
+		_ = r.Body.Close()
 	}()
 
 	if len(b) == 0 {

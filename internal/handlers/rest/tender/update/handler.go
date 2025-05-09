@@ -24,6 +24,10 @@ type useCaseTenderEdite interface {
 	Status(ctx context.Context, username string, tenderId string, status string) (model.Tender, error)
 }
 
+type prometheusMiddleware interface {
+	PrometheusMiddleware(handlerName string, next http.HandlerFunc) http.Handler
+}
+
 type producer interface {
 	SendEvent(eventType string, model interface{}) error
 	SendAsync(eventType string, model interface{})
@@ -31,6 +35,7 @@ type producer interface {
 
 type Handler struct {
 	log         log
+	prometheus  prometheusMiddleware
 	producer    producer
 	tenderEdite useCaseTenderEdite
 }
@@ -39,16 +44,16 @@ var tenderEditeRegexp = regexp.MustCompile(`/tenders/(.*)/edit`)
 var tenderIdRollbackRegexp = regexp.MustCompile(`/tenders/(.*)/rollback/`)
 var tenderVersionRollbackRegexp = regexp.MustCompile(`/rollback/(.*)\?`)
 
-func NewHandler(l log, p producer, t useCaseTenderEdite) Handler {
+func NewHandler(l log, pm prometheusMiddleware, p producer, t useCaseTenderEdite) Handler {
 	return Handler{
-		l, p, t,
+		l, pm, p, t,
 	}
 }
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodPatch+" /api/tenders/{id}/edit", h.Edit)
-	router.HandleFunc(http.MethodPut+" /api/tenders/{id}/rollback/{version}", h.Rollback)
-	router.HandleFunc(http.MethodPut+" /api/tenders/status", h.Status)
+	router.Handle(http.MethodPatch+" /api/tenders/{id}/edit", h.prometheus.PrometheusMiddleware("tenderEdit", h.Edit))
+	router.Handle(http.MethodPut+" /api/tenders/{id}/rollback/{version}", h.prometheus.PrometheusMiddleware("tenderRollback", h.Rollback))
+	router.Handle(http.MethodPut+" /api/tenders/status", h.prometheus.PrometheusMiddleware("tenderStatus", h.Status))
 }
 
 func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {

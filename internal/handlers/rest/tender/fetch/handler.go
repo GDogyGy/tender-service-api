@@ -17,6 +17,11 @@ type log interface {
 	Error(msg string, args ...any)
 }
 
+//go:generate mockery --inpackage --name=prometheusMiddleware --exported --testonly --inpackage-suffix
+type prometheusMiddleware interface {
+	PrometheusMiddleware(handlerName string, next http.HandlerFunc) http.Handler
+}
+
 //go:generate mockery --inpackage --name=useCasesTenderFetch --exported --testonly --inpackage-suffix
 type useCasesTenderFetch interface {
 	FetchList(ctx context.Context, serviceType string) ([]model.Tender, error)
@@ -26,19 +31,20 @@ type useCasesTenderFetch interface {
 
 type Handler struct {
 	log         log
+	prometheus  prometheusMiddleware
 	tenderFetch useCasesTenderFetch
 }
 
-func NewHandler(l log, t useCasesTenderFetch) Handler {
+func NewHandler(l log, p prometheusMiddleware, t useCasesTenderFetch) Handler {
 	return Handler{
-		l, t,
+		l, p, t,
 	}
 }
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodGet+" /api/tenders", h.FetchList)
-	router.HandleFunc(http.MethodGet+" /api/tenders/my", h.FetchListByUser)
-	router.HandleFunc(http.MethodGet+" /api/tenders/status", h.FetchStatus)
+	router.Handle(http.MethodGet+" /api/tenders", h.prometheus.PrometheusMiddleware("tenderFetchList", h.FetchList))
+	router.Handle(http.MethodGet+" /api/tenders/my", h.prometheus.PrometheusMiddleware("tenderFetchListByUser", h.FetchListByUser))
+	router.Handle(http.MethodGet+" /api/tenders/status", h.prometheus.PrometheusMiddleware("tenderFetchStatus", h.FetchStatus))
 }
 
 func (h *Handler) FetchList(w http.ResponseWriter, r *http.Request) {

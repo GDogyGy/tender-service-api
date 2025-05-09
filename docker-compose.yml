@@ -7,6 +7,9 @@ volumes:
     driver: local
   kafka_data:
     driver: local
+  prometheus_data:
+  grafana_data:
+
 
 services:
   db:
@@ -108,6 +111,28 @@ services:
       - zookeeper
     networks:
       - backend
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus:rw
+    networks:
+      - backend
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config/grafana.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - grafana_data:/var/lib/grafana:rw
+    networks:
+      - backend
+    depends_on:
+      - prometheus
 networks:
   backend:
     driver: bridge

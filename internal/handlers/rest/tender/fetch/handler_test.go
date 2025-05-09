@@ -100,11 +100,12 @@ func TestHandleFetchList(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			serviceTenderMock := NewMockuseCasesTenderFetch(t)
+			middlewarePrometheus := NewMockprometheusMiddleware(t)
 			logMock := NewMocklog(t)
 
 			tc.prepare(serviceTenderMock, logMock)
 
-			handler := tender.NewHandler(logMock, serviceTenderMock)
+			handler := tender.NewHandler(logMock, middlewarePrometheus, serviceTenderMock)
 
 			r := httptest.NewRequest(tc.method, tc.url, nil)
 
@@ -192,11 +193,12 @@ func TestHandleFetchListByUser(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			serviceTenderMock := NewMockuseCasesTenderFetch(t)
+			middlewarePrometheus := NewMockprometheusMiddleware(t)
 			logMock := NewMocklog(t)
 
 			tc.prepare(serviceTenderMock, logMock)
 
-			handler := tender.NewHandler(logMock, serviceTenderMock)
+			handler := tender.NewHandler(logMock, middlewarePrometheus, serviceTenderMock)
 
 			r := httptest.NewRequest(tc.method, tc.url, nil)
 
@@ -297,11 +299,12 @@ func TestHandleFetchStatus(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			serviceTenderMock := NewMockuseCasesTenderFetch(t)
+			middlewarePrometheus := NewMockprometheusMiddleware(t)
 			logMock := NewMocklog(t)
 
 			tc.prepare(serviceTenderMock, logMock)
 
-			handler := tender.NewHandler(logMock, serviceTenderMock)
+			handler := tender.NewHandler(logMock, middlewarePrometheus, serviceTenderMock)
 
 			r := httptest.NewRequest(tc.method, tc.url, nil)
 

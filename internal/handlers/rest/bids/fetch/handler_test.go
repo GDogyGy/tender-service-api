@@ -90,11 +90,12 @@ func TestHandleFetchListByUser(t *testing.T) {
 			t.Parallel()
 			useCaseBidsFetch := NewMockuseCaseBidsFetch(t)
 			useCaseBidFeedbackFetch := NewMockuseCaseBidFeedbackFetch(t)
+			middlewarePrometheus := NewMockprometheusMiddleware(t)
 			logMock := NewMocklog(t)
 
 			tc.prepare(useCaseBidsFetch, logMock)
 
-			handler := bids.NewHandler(logMock, useCaseBidsFetch, useCaseBidFeedbackFetch)
+			handler := bids.NewHandler(logMock, middlewarePrometheus, useCaseBidsFetch, useCaseBidFeedbackFetch)
 
 			r := httptest.NewRequest(tc.method, tc.url, nil)
 
@@ -207,11 +208,12 @@ func TestHandleFetchListByTender(t *testing.T) {
 			t.Parallel()
 			useCaseBidsFetch := NewMockuseCaseBidsFetch(t)
 			useCaseBidFeedbackFetch := NewMockuseCaseBidFeedbackFetch(t)
+			middlewarePrometheus := NewMockprometheusMiddleware(t)
 			logMock := NewMocklog(t)
 
 			tc.prepare(useCaseBidsFetch, logMock)
 
-			handler := bids.NewHandler(logMock, useCaseBidsFetch, useCaseBidFeedbackFetch)
+			handler := bids.NewHandler(logMock, middlewarePrometheus, useCaseBidsFetch, useCaseBidFeedbackFetch)
 
 			r := httptest.NewRequest(tc.method, tc.url, nil)
 
@@ -313,11 +315,12 @@ func TestHandleFetchStatus(t *testing.T) {
 			t.Parallel()
 			useCaseBidsFetch := NewMockuseCaseBidsFetch(t)
 			useCaseBidFeedbackFetch := NewMockuseCaseBidFeedbackFetch(t)
+			middlewarePrometheus := NewMockprometheusMiddleware(t)
 			logMock := NewMocklog(t)
 
 			tc.prepare(useCaseBidsFetch, logMock)
 
-			handler := bids.NewHandler(logMock, useCaseBidsFetch, useCaseBidFeedbackFetch)
+			handler := bids.NewHandler(logMock, middlewarePrometheus, useCaseBidsFetch, useCaseBidFeedbackFetch)
 
 			r := httptest.NewRequest(tc.method, tc.url, nil)
 
@@ -419,11 +422,12 @@ func TestHandleFetchReviews(t *testing.T) {
 			t.Parallel()
 			useCaseBidsFetch := NewMockuseCaseBidsFetch(t)
 			useCaseBidFeedbackFetch := NewMockuseCaseBidFeedbackFetch(t)
+			middlewarePrometheus := NewMockprometheusMiddleware(t)
 			logMock := NewMocklog(t)
 
 			tc.prepare(useCaseBidFeedbackFetch, logMock)
 
-			handler := bids.NewHandler(logMock, useCaseBidsFetch, useCaseBidFeedbackFetch)
+			handler := bids.NewHandler(logMock, middlewarePrometheus, useCaseBidsFetch, useCaseBidFeedbackFetch)
 
 			r := httptest.NewRequest(tc.method, tc.url, nil)
 

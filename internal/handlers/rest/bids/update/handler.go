@@ -28,8 +28,13 @@ type useCaseBidDecision interface {
 	SubmitDecision(ctx context.Context, username string, bidID string, decision string, organizationID string) (model.Bids, error)
 }
 
+type prometheusMiddleware interface {
+	PrometheusMiddleware(handlerName string, next http.HandlerFunc) http.Handler
+}
+
 type Handler struct {
 	log          log
+	prometheus   prometheusMiddleware
 	bidsEdite    useCaseBidEdit
 	bidsDecision useCaseBidDecision
 }
@@ -40,17 +45,17 @@ var bidVersionRollbackRegexp = regexp.MustCompile(`/rollback/(.*)\?`)
 var bidIdStatusRegexp = regexp.MustCompile(`/bids/(.*)/status\?`)
 var bidEditDecisionRegexp = regexp.MustCompile(`/api/bids/(.*)/submit_decision\?`)
 
-func NewHandler(l log, b useCaseBidEdit, d useCaseBidDecision) Handler {
+func NewHandler(l log, pm prometheusMiddleware, b useCaseBidEdit, d useCaseBidDecision) Handler {
 	return Handler{
-		l, b, d,
+		l, pm, b, d,
 	}
 }
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodPatch+" /api/bids/{bidId}/edit", h.Edit)
-	router.HandleFunc(http.MethodPut+" /api/bids/{bidId}/rollback/{version}", h.Rollback)
-	router.HandleFunc(http.MethodPut+" /api/bids/{bidId}/status", h.Status)
-	router.HandleFunc(http.MethodPut+" /api/bids/{bidId}/submit_decision", h.SubmitDecision)
+	router.Handle(http.MethodPatch+" /api/bids/{bidId}/edit", h.prometheus.PrometheusMiddleware("bidsEdit", h.Edit))
+	router.Handle(http.MethodPut+" /api/bids/{bidId}/rollback/{version}", h.prometheus.PrometheusMiddleware("bidsRollback", h.Rollback))
+	router.Handle(http.MethodPut+" /api/bids/{bidId}/status", h.prometheus.PrometheusMiddleware("bidsStatus", h.Status))
+	router.Handle(http.MethodPut+" /api/bids/{bidId}/submit_decision", h.prometheus.PrometheusMiddleware("bidsSubmitDecision", h.SubmitDecision))
 }
 
 func (h *Handler) Edit(w http.ResponseWriter, r *http.Request) {

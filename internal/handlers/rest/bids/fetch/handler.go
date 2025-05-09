@@ -18,6 +18,11 @@ type log interface {
 	Error(msg string, args ...any)
 }
 
+//go:generate mockery --inpackage --name=prometheusMiddleware --exported --testonly --inpackage-suffix
+type prometheusMiddleware interface {
+	PrometheusMiddleware(handlerName string, next http.HandlerFunc) http.Handler
+}
+
 //go:generate mockery --inpackage --name=useCaseBidsFetch --exported --testonly --inpackage-suffix
 type useCaseBidsFetch interface {
 	FetchListByTender(ctx context.Context, username string, tenderId string) ([]model.Bids, error)
@@ -32,13 +37,14 @@ type useCaseBidFeedbackFetch interface {
 
 type Handler struct {
 	log              log
+	prometheus       prometheusMiddleware
 	bidsFetch        useCaseBidsFetch
 	bidFeedbackFetch useCaseBidFeedbackFetch
 }
 
-func NewHandler(l log, t useCaseBidsFetch, f useCaseBidFeedbackFetch) Handler {
+func NewHandler(l log, p prometheusMiddleware, t useCaseBidsFetch, f useCaseBidFeedbackFetch) Handler {
 	return Handler{
-		l, t, f,
+		l, p, t, f,
 	}
 }
 
@@ -47,10 +53,10 @@ var tenderIdRegexp = regexp.MustCompile(`/api/bids/(.*)/list`)
 var bidIdStatusRegexp = regexp.MustCompile(`/api/bids/(.*)/status\?`)
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodGet+" /api/bids/{tenderID}/list", h.FetchListByTender)
-	router.HandleFunc(http.MethodGet+" /api/bids/my", h.FetchListByUser)
-	router.HandleFunc(http.MethodGet+" /api/bids/{bidID}/status", h.FetchStatus)
-	router.HandleFunc(http.MethodGet+" /api/bids/{tenderID}/reviews", h.FetchReviews)
+	router.Handle(http.MethodGet+" /api/bids/{tenderID}/list", h.prometheus.PrometheusMiddleware("bidsFetchListByTender", h.FetchListByTender))
+	router.Handle(http.MethodGet+" /api/bids/my", h.prometheus.PrometheusMiddleware("bidsFetchListByUser", h.FetchListByUser))
+	router.Handle(http.MethodGet+" /api/bids/{bidID}/status", h.prometheus.PrometheusMiddleware("bidsFetchStatus", h.FetchStatus))
+	router.Handle(http.MethodGet+" /api/bids/{tenderID}/reviews", h.prometheus.PrometheusMiddleware("bidsFetchReviews", h.FetchReviews))
 }
 
 func (h *Handler) FetchListByTender(w http.ResponseWriter, r *http.Request) {

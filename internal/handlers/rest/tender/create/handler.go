@@ -21,6 +21,10 @@ type useCasesTenderCreate interface {
 	Create(ctx context.Context, creatorUsername string, organizationId string, saveModel model.Tender) (model.Tender, error)
 }
 
+type prometheusMiddleware interface {
+	PrometheusMiddleware(handlerName string, next http.HandlerFunc) http.Handler
+}
+
 type producer interface {
 	SendEvent(eventType string, model interface{}) error
 	SendAsync(eventType string, model interface{})
@@ -28,18 +32,19 @@ type producer interface {
 
 type Handler struct {
 	log                  log
+	prometheus           prometheusMiddleware
 	producer             producer
 	useCasesTenderCreate useCasesTenderCreate
 }
 
-func NewHandler(l log, p producer, useCasesTenderCreate useCasesTenderCreate) Handler {
+func NewHandler(l log, pm prometheusMiddleware, p producer, useCasesTenderCreate useCasesTenderCreate) Handler {
 	return Handler{
-		l, p, useCasesTenderCreate,
+		l, pm, p, useCasesTenderCreate,
 	}
 }
 
 func (h *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc(http.MethodPost+" /api/tenders/new", h.Create)
+	router.Handle(http.MethodPost+" /api/tenders/new", h.prometheus.PrometheusMiddleware("tenderCreate", h.Create))
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {

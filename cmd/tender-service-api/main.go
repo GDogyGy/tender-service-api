@@ -23,11 +23,13 @@ import (
 	bidsFetch "TenderServiceApi/internal/handlers/rest/bids/fetch"
 	bidsUpdate "TenderServiceApi/internal/handlers/rest/bids/update"
 	pingFetch "TenderServiceApi/internal/handlers/rest/ping/fetch"
+	prometheusFetch "TenderServiceApi/internal/handlers/rest/prometheus/fetch"
 	swaggerFetch "TenderServiceApi/internal/handlers/rest/swagger/fetch"
 	tenderCreate "TenderServiceApi/internal/handlers/rest/tender/create"
 	tenderFetch "TenderServiceApi/internal/handlers/rest/tender/fetch"
 	tenderUpdate "TenderServiceApi/internal/handlers/rest/tender/update"
 	"TenderServiceApi/internal/kafka"
+	"TenderServiceApi/internal/middleware/prometheusMiddleware"
 	bidDecisionRepository "TenderServiceApi/internal/repository/bid_decision"
 	bidFeedbackRepository "TenderServiceApi/internal/repository/bid_feedback"
 	bidsRepository "TenderServiceApi/internal/repository/bids"
@@ -90,6 +92,8 @@ func main() {
 	repositoryBidDecision := bidDecisionRepository.NewRepository(storage.Db)
 	// Repository !>
 
+	middlewarePrometheus := prometheusMiddleware.NewPrometheusMiddleware()
+
 	useCaseOrganizationVerify := organizationUseCaseVerify.NewService(repositoryOrganization)
 
 	// <! useCase Tender
@@ -114,20 +118,24 @@ func main() {
 	// useCase Bids_Feedback !>
 
 	// <! Handler Tender
-	handlerTenderFetch := tenderFetch.NewHandler(log, useCaseTenderFetch)
-	handlerTenderCreate := tenderCreate.NewHandler(log, producer, UseCaseTenderCreate)
-	handlerTenderUpdate := tenderUpdate.NewHandler(log, producer, useCaseTenderEdit)
+	handlerTenderFetch := tenderFetch.NewHandler(log, middlewarePrometheus, useCaseTenderFetch)
+	handlerTenderCreate := tenderCreate.NewHandler(log, middlewarePrometheus, producer, UseCaseTenderCreate)
+	handlerTenderUpdate := tenderUpdate.NewHandler(log, middlewarePrometheus, producer, useCaseTenderEdit)
 	// Handler Tender !>
 
 	// <! Handler Bids
-	handlerBidsCreate := bidsCreate.NewHandler(log, producer, useCaseBidsCreate, useCaseBidFeedbackCreate)
-	handlerBidsFetch := bidsFetch.NewHandler(log, useCaseBidsFetch, useCaseBidFeedbackFetch)
-	handlerBidsUpdate := bidsUpdate.NewHandler(log, useCaseBidsEdit, useCaseBidsDecision)
+	handlerBidsCreate := bidsCreate.NewHandler(log, middlewarePrometheus, producer, useCaseBidsCreate, useCaseBidFeedbackCreate)
+	handlerBidsFetch := bidsFetch.NewHandler(log, middlewarePrometheus, useCaseBidsFetch, useCaseBidFeedbackFetch)
+	handlerBidsUpdate := bidsUpdate.NewHandler(log, middlewarePrometheus, useCaseBidsEdit, useCaseBidsDecision)
 	// Handler Bids !>
 
 	// <! Handler Ping
 	handlerPingFetch := pingFetch.NewHandler()
 	// Handler Ping !>
+
+	// <! Handler Prometheus
+	handlePrometheusFetch := prometheusFetch.NewHandler()
+	// Handler Prometheus !>
 
 	// <! Handler Swagger
 	handlerSwaggerFetch := swaggerFetch.NewHandler()
@@ -141,6 +149,7 @@ func main() {
 	handlerBidsFetch.Register(router)
 	handlerBidsUpdate.Register(router)
 	handlerPingFetch.Register(router)
+	handlePrometheusFetch.Register(router)
 	handlerSwaggerFetch.Register(router)
 
 	gRPCServer := grpc.NewServer()
@@ -156,7 +165,6 @@ func main() {
 	bidsFetchGrpc.NewHandler(gRPCServer, log, useCaseBidsFetch, useCaseBidFeedbackFetch)
 	bidsUpdateGrpc.NewHandler(gRPCServer, log, useCaseBidsEdit, useCaseBidsDecision)
 	// gRPC Handler Tender !>
-
 	var wg sync.WaitGroup
 	wg.Add(2)
 
