@@ -1,0 +1,16 @@
+# organization_responsible.yml
+- id: "bf30cf8e-14e2-4c22-8f91-72cca8a284b8"
+  organization_id: "550e8400-e29b-41d4-a716-446655440000"
+  user_id: "550e8400-e29b-41d4-a716-446655440001"
+
+- id: "27bd91a5-8882-4596-89ce-b9597364c81f"
+  organization_id: '109dae74-bbf6-484b-8b2b-ab7c97967905'
+  user_id: "e69b35b6-9bd0-4a49-b7d1-3765c72c484e"
+
+- id: "c8c8c9b3-4d49-44e0-bdcd-3be6dd5ccd54"
+  organization_id: '109dae74-bbf6-484b-8b2b-ab7c97967905'
+  user_id: "f4c5ab0c-2a57-45e1-acc9-92aecbcb518d"
+
+- id: "0473a281-29c8-4dc5-a8b8-f96c844e67a7"
+  organization_id: '109dae74-bbf6-484b-8b2b-ab7c97967905'
+  user_id: "5ad1000e-0f7a-480f-8934-e6f5c6f3e69a"

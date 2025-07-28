@@ -1,0 +1,10 @@
+# bids.yml
+- id: "e6de0eb6-2c16-419e-9c4d-e673be6e69aa"
+  bid_id: "385a485c-c977-429d-88ee-72fec6aa0444"
+  decision: "APPROVED"
+  responsible: "27bd91a5-8882-4596-89ce-b9597364c81f"
+
+- id: "e6de0eb6-2c16-419e-9c4d-e673be6e69aa"
+  bid_id: "385a485c-c977-429d-88ee-72fec6aa0444"
+  decision: "APPROVED"
+  responsible: "c8c8c9b3-4d49-44e0-bdcd-3be6dd5ccd54"

@@ -1,0 +1,198 @@
+package create
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"regexp"
+
+	"TenderServiceApi/internal/handlers/rest/types/convert"
+	"TenderServiceApi/internal/handlers/rest/types/transport"
+	"TenderServiceApi/internal/model"
+)
+
+type log interface {
+	Error(msg string, args ...any)
+}
+
+type producer interface {
+	SendEvent(eventType string, model interface{}) error
+	SendAsync(eventType string, model interface{})
+}
+
+type useCaseBidsCreate interface {
+	Create(ctx context.Context, creatorUsername string, organizationId string, saveModel model.Bids) (model.Bids, error)
+}
+
+type useCaseBidFeedbackCreate interface {
+	Create(ctx context.Context, creatorUsername string, tenderID string, saveModel model.BidFeedback) (model.BidFeedback, error)
+}
+
+type prometheusMiddleware interface {
+	PrometheusMiddleware(handlerName string, next http.HandlerFunc) http.Handler
+}
+
+type Handler struct {
+	log                      log
+	prometheus               prometheusMiddleware
+	producer                 producer
+	useCaseBidsCreate        useCaseBidsCreate
+	useCaseBidFeedbackCreate useCaseBidFeedbackCreate
+}
+
+func NewHandler(l log, pm prometheusMiddleware, p producer, useCaseBidsCreate useCaseBidsCreate, useCaseBidFeedbackCreate useCaseBidFeedbackCreate) Handler {
+	return Handler{
+		l, pm, p, useCaseBidsCreate, useCaseBidFeedbackCreate,
+	}
+}
+
+var bidFeedbackID = regexp.MustCompile(`/api/bids/(.*)/feedback\?`)
+
+func (h *Handler) Register(router *http.ServeMux) {
+	router.Handle(http.MethodPost+" /api/bids/new", h.prometheus.PrometheusMiddleware("bidsCreate", h.Create))
+	router.Handle(http.MethodPut+" /api/bids/{bidId}/feedback", h.prometheus.PrometheusMiddleware("bidsFeedback", h.Feedback))
+}
+
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer func() {
+		_ = r.Body.Close()
+	}()
+
+	if len(b) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var bidCreateRequest transport.BidCreateRequest
+	err = json.Unmarshal(b, &bidCreateRequest)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if bidCreateRequest.Status != transport.BidCreateRequestStatusCREATED {
+		h.log.Error(model.BadStatus.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.useCaseBidsCreate.Create(r.Context(), bidCreateRequest.CreatorUsername, bidCreateRequest.OrganizationId, convert.BidsReqCreateTransportToModel(bidCreateRequest))
+	if errors.Is(err, sql.ErrNoRows) {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	bid := convert.BidsModelToTransport(resp)
+
+	err = h.producer.SendEvent("bids_created", bid)
+	if err != nil {
+		h.log.Error("Error kafka handler" + err.Error())
+	}
+
+	b, err = json.Marshal(bid)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Feedback(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	rq := r.URL.Query()
+	username := "username"
+
+	if rq.Get(username) == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	bidID := bidFeedbackID.FindStringSubmatch(r.RequestURI)
+	if bidID == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	if len(b) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var feedback transport.Feedback
+	err = json.Unmarshal(b, &feedback)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.useCaseBidFeedbackCreate.Create(r.Context(), rq.Get(username), bidID[1], convert.BidFeedbackTransportToModel(feedback))
+	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, model.NotFindResponsible) {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	feedback = convert.BidFeedbackModelToTransport(resp)
+	b, err = json.Marshal(feedback)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(b)
+	if err != nil {
+		h.log.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

@@ -1,0 +1,139 @@
+volumes:
+  db:
+    driver: local
+  db_test:
+    driver: local
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+  prometheus_data:
+  grafana_data:
+
+
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    container_name: db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - DATABASE_HOST=${POSTGRES_HOST}
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+    networks:
+      - backend
+  app_test:
+    container_name: app_test
+    build:
+      context: .
+      dockerfile: ./docker/app-test/Dockerfile
+    restart: always
+    environment:
+      - CONFIG_PATH=config/local.yaml
+      - SERVER_ADDRESS=:9000
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=TenderApi
+      - POSTGRES_CONN=postgres://root:123@db_test:5432/TenderApiTest?sslmode=disable
+      - POSTGRES_USER=root
+      - POSTGRES_PORT=5432
+    ports:
+      - '9000:9000'
+    depends_on:
+      db_test:
+        condition: service_healthy
+  db_test:
+    image: postgres:latest
+    restart: always
+    container_name: db_test
+    environment:
+      POSTGRES_DB: TenderApiTest
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123
+      DATABASE_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: 5432
+    ports:
+      - '5434:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d TenderApiTest" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db_test:/var/lib/postgresql/data
+    depends_on:
+      - db
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/bitnami/zookeeper
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+    networks:
+      - backend
+  kafka:
+    image: bitnami/kafka:3.4
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka_data:/bitnami/kafka
+    depends_on:
+      - zookeeper
+    networks:
+      - backend
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8083:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+      - zookeeper
+    networks:
+      - backend
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus:rw
+    networks:
+      - backend
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config/grafana.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - grafana_data:/var/lib/grafana:rw
+    networks:
+      - backend
+    depends_on:
+      - prometheus
+networks:
+  backend:
+    driver: bridge
+

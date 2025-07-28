@@ -10,10 +10,12 @@ type Service struct {
 	useCaseOrganizationVerify useCaseOrganizationVerify
 }
 
+//go:generate mockery --inpackage --name=repository --exported --testonly --inpackage-suffix
 type repository interface {
 	Create(ctx context.Context, saveModel model.Bids) (model.Bids, error)
 }
 
+//go:generate mockery --inpackage --name=useCaseOrganizationVerify --exported --testonly --inpackage-suffix
 type useCaseOrganizationVerify interface {
 	CheckResponsible(ctx context.Context, username string, organizationId string) (model.OrganizationResponsible, error)
 }

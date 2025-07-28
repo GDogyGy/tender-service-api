@@ -1,0 +1,48 @@
+package convert
+
+import (
+	"TenderServiceApi/internal/handlers/rest/types/transport"
+	"TenderServiceApi/internal/model"
+)
+
+func TenderModelToTransport(m model.Tender) transport.Tender {
+	return transport.Tender{
+		Id:          m.Id,
+		Name:        m.Name,
+		Description: m.Description,
+		ServiceType: m.ServiceType,
+		Status:      transport.TenderStatus(m.Status),
+		Version:     m.Version,
+		Responsible: m.Responsible,
+	}
+}
+
+func TenderTransportToModel(t transport.Tender) model.Tender {
+	return model.Tender{
+		Id:          t.Id,
+		Name:        t.Name,
+		Description: t.Description,
+		ServiceType: t.ServiceType,
+		Status:      string(t.Status),
+		Version:     t.Version,
+		Responsible: t.Responsible,
+	}
+}
+
+func TenderReqCreateTransportToModel(t transport.TenderCreateRequest) model.Tender {
+	return model.Tender{
+		Name:        t.Name,
+		Description: t.Description,
+		ServiceType: t.ServiceType,
+		Status:      string(t.Status),
+		Responsible: t.OrganizationId,
+	}
+}
+
+func TenderReqEditTransportToModel(t transport.TenderEditRequest) model.Tender {
+	return model.Tender{
+		Name:        t.Name,
+		Description: t.Description,
+		ServiceType: t.ServiceType,
+	}
+}

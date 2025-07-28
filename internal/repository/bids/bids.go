@@ -1,4 +1,4 @@
-package tender
+package bids
 
 import (
 	"TenderServiceApi/internal/model"
@@ -35,7 +35,6 @@ func (t *Repository) FetchListByTender(ctx context.Context, tenderId string) ([]
 
 	for rows.Next() {
 		tender, err := t.fromRows(rows)
-		fmt.Println(err) // nolint:all
 		if err != nil {
 			return bids, fmt.Errorf("%s:%w", op, err)
 		}
@@ -75,7 +74,7 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Bids) (model.Bi
 	const op = "repository.bids.Create"
 
 	r := toRow(saveModel)
-
+	r.Version = 1
 	q := "INSERT INTO bids (name, description, status, tender_id, version, responsible) VALUES($1,$2,$3,$4,$5,$6) RETURNING id"
 
 	result := t.db.QueryRowxContext(ctx, q, r.Name, r.Description, r.Status, r.TenderId, r.Version, r.Responsible)
@@ -93,6 +92,7 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Bids) (model.Bi
 		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
 	}
 	saveModel.Id = id
+	saveModel.Version = 1
 
 	return saveModel, nil
 }
@@ -145,6 +145,73 @@ func (t *Repository) FetchById(ctx context.Context, bidsId string) (model.Bids, 
 	}
 
 	return te.toModel(), nil
+}
+
+func (t *Repository) UpdateStatus(ctx context.Context, bidID string, status string) (model.Bids, error) {
+	const op = "repository.bids.UpdateStatus"
+
+	q := `UPDATE bids SET status = $1 WHERE id = $2`
+	result, err := t.db.QueryxContext(ctx, q, status, bidID)
+	if err != nil {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = result.Close()
+	if err != nil {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	resp, err := t.FetchById(ctx, bidID)
+	if err != nil {
+		return model.Bids{}, model.NotFound
+	}
+
+	return resp, nil
+}
+
+func (t *Repository) Edit(ctx context.Context, bidNew model.Bids, bid model.Bids) (model.Bids, error) {
+	const op = "repository.bids.Edit"
+	r := toRow(bidNew)
+	
+	q := `INSERT INTO bids (id, name, description, status, tender_id, version, responsible) VALUES ($1,$2,$3,$4,$5,$6,$7)`
+	result, err := t.db.QueryxContext(ctx, q, r.Id, r.Name, r.Description, r.Status, r.TenderId, r.Version, r.Responsible)
+	if err != nil {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = result.Close()
+	if err != nil {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return bidNew, nil
+}
+
+func (t *Repository) Rollback(ctx context.Context, id string, version string) (model.Bids, error) {
+	const op = "repository.bids.Rollback"
+
+	q := `INSERT INTO bids (id, name, description, status, tender_id, version, responsible) SELECT id, name, description, status, tender_id, (SELECT version + 1 FROM bids WHERE bids.id = $1 and version = (SELECT MAX(version) FROM bids t2 WHERE bids.id = t2.id)) as version, responsible FROM bids WHERE id = $1 and version = $2 RETURNING id`
+	bid := t.db.QueryRowxContext(ctx, q, id, version)
+	err := bid.Err()
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, model.NotFound)
+	}
+	if err != nil {
+		return model.Bids{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var bidID string
+	err = bid.Scan(&bidID)
+	if err != nil {
+		return model.Bids{}, model.NotFound
+	}
+
+	resp, err := t.FetchById(ctx, bidID)
+	if err != nil {
+		return model.Bids{}, model.NotFound
+	}
+
+	return resp, nil
 }
 
 var column = []string{"bids.id", "bids.name", "bids.description", "bids.status", "bids.tender_id", "bids.version", "bids.responsible"}

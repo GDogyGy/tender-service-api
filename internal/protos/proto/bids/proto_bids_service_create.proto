@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package create;
+option go_package = "/gen/bids/create";
+
+service BidsServiceCreate {
+  rpc Create(BidRequestCreateV1) returns (BidV1);
+  rpc Feedback(BidRequestFeedbackV1) returns (bidFeedbackV1);
+}
+
+message BidV1 {
+  string Id = 1;
+  string Description = 2;
+  string Name = 3;
+  string Responsible = 4;
+  string Status = 5;
+  string TenderId = 6;
+  int32 Version = 7;
+}
+
+message bidFeedbackV1 {
+  string Id = 1;
+  string BidID = 2;
+  string Description = 3;
+  string Responsible = 4;
+  string CreatedAt = 5;
+}
+
+message BidRequestCreateV1 {
+  string CreatorUsername = 1;
+  string Description = 2;
+  string Name = 3;
+  string OrganizationId = 4;
+  string Status = 5;
+  string TenderId = 6;
+}
+
+message BidRequestFeedbackV1 {
+  string Username = 1;
+  string BidID = 2;
+  string Description = 3;
+}

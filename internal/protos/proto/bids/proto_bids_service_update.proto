@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package update;
+option go_package = "/gen/bids/update";
+
+service BidsServiceFetch {
+  rpc Edit(BidsRequestEditV1) returns (BidEditV1);
+  rpc Rollback(BidsRequestRollbackV1) returns (BidEditV1);
+  rpc Status(BidsRequestStatusV1) returns (BidEditV1);
+  rpc SubmitDecision(BidsRequestSubmitDecisionV1) returns (BidEditV1);
+}
+
+message BidEditV1 {
+  string Id = 1;
+  string Description = 2;
+  string Name = 3;
+  string Responsible = 4;
+  string Status = 5;
+  string TenderId = 6;
+  int32 Version = 7;
+}
+
+
+message BidsRequestEditV1 {
+  string Username = 1;
+  string BidID = 2;
+  string Description = 3;
+  string Name = 4;
+}
+
+message BidsRequestRollbackV1 {
+  string Username = 1;
+  string BidID = 2;
+  string Version = 3;
+}
+
+message BidsRequestStatusV1 {
+  string Username = 1;
+  string BidID = 2;
+  string Status = 3;
+}
+
+message BidsRequestSubmitDecisionV1 {
+  string Username = 1;
+  string BidID = 2;
+  string Decision = 3;
+  string OrganizationID = 4;
+}

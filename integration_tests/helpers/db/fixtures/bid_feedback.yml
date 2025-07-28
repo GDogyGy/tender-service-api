@@ -1,0 +1,12 @@
+# bids.yml
+- id: "fe648149-9135-47c1-9073-7047611d9be6"
+  bid_id: "385a485c-c977-429d-88ee-72fec6aa0444"
+  description: 'Нужно бы доработать предложение и добавить смету'
+  responsible: "27bd91a5-8882-4596-89ce-b9597364c81f"
+  created_at: RAW=NOW()
+
+- id: "24aff75c-1167-4919-bed3-7a9bf10e6997"
+  bid_id: "56289f77-873e-4a18-b71c-ffa5ea53e89c"
+  description: 'Не все условия соблюдены. Нужно доработать'
+  responsible: "bf30cf8e-14e2-4c22-8f91-72cca8a284b8"
+  created_at: RAW=NOW()

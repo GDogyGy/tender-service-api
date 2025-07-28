@@ -1,4 +1,4 @@
-package tender
+package bids
 
 import (
 	"TenderServiceApi/internal/model"

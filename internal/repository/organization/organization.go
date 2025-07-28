@@ -84,6 +84,29 @@ func (o *Repository) FetchRelationsById(ctx context.Context, id string) (model.O
 	return result, nil
 }
 
+func (o *Repository) FetchByUserName(ctx context.Context, username string) (model.OrganizationResponsible, error) {
+	const op = "repository.organization.FetchByUserName"
+	var result model.OrganizationResponsible
+
+	q := "SELECT organization_responsible.id, organization_responsible.organization_id, organization_responsible.user_id FROM organization_responsible LEFT JOIN employee e on organization_responsible.user_id = e.id WHERE e.username = $1"
+
+	row := o.db.QueryRowxContext(ctx, q, username)
+	err := row.Err()
+	if errors.Is(err, sql.ErrNoRows) {
+		return result, model.NotFound
+	}
+	if err != nil {
+		return result, fmt.Errorf("%s: %w", op, err)
+	}
+
+	result, err = o.organizationResponsibleFromRow(row)
+	if err != nil {
+		return result, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return result, nil
+}
+
 var column = []string{"organization.id", "organization.name", "organization.description", "organization.type"}
 
 func (e *Repository) organizationFromRow(ro *sqlx.Row) (model.Organization, error) {

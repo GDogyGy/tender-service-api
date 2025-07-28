@@ -61,7 +61,7 @@ func (t *Repository) FetchListByUser(ctx context.Context, username string) ([]mo
 	var rows *sqlx.Rows
 	var err error
 
-	q := fmt.Sprintf(`SELECT %s FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, strings.Join(column, ","))
+	q := fmt.Sprintf(`SELECT %s FROM tender left join organization_responsible o on responsible = o.organization_id left join employee e on o.user_id = e.id WHERE e.username = $1 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, strings.Join(column, ","))
 	rows, err = t.db.QueryxContext(ctx, q, username)
 	if errors.Is(err, sql.ErrNoRows) {
 		return tenders, model.NotFound
@@ -83,7 +83,7 @@ func (t *Repository) FetchListByUser(ctx context.Context, username string) ([]mo
 
 func (t *Repository) CheckResponsible(ctx context.Context, username string, tenderId string) (bool, error) {
 	const op = "repository.tender.CheckResponsible"
-	tender := t.db.QueryRowxContext(ctx, `SELECT COUNT(*) FROM tender left join organization_responsible o on responsible = o.id left join employee e on o.user_id = e.id WHERE e.username = $1 AND tender.id = $2 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, username, tenderId)
+	tender := t.db.QueryRowxContext(ctx, `SELECT COUNT(*) FROM tender left join organization_responsible o on responsible = o.organization_id left join employee e on o.user_id = e.id WHERE e.username = $1 AND tender.id = $2 and version = (SELECT MAX(version) FROM tender t2 WHERE tender.id = t2.id)`, username, tenderId)
 
 	err := tender.Err()
 
@@ -140,7 +140,6 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Tender) (model.
 	const op = "repository.tender.Create"
 
 	r := toRow(saveModel)
-
 	q := "INSERT INTO tender (name, description, service_type, status, responsible) VALUES($1,$2,$3,$4,$5) RETURNING id"
 
 	result := t.db.QueryRowxContext(ctx, q, r.Name, r.Description, r.ServiceType, r.Status, r.Responsible)
@@ -162,12 +161,11 @@ func (t *Repository) Create(ctx context.Context, saveModel model.Tender) (model.
 	return saveModel, nil
 }
 
-func (t *Repository) Edite(ctx context.Context, tenderNew model.Tender, tender model.Tender) (model.Tender, error) {
-	const op = "repository.tender.Edite"
-	var r row
-	tenderNew.Version = tender.Version + 1
+func (t *Repository) Edit(ctx context.Context, tenderNew model.Tender, tender model.Tender) (model.Tender, error) {
+	const op = "repository.tender.Edit"
 
-	r = toRow(tenderNew)
+	r := toRow(tenderNew)
+
 	q := `INSERT INTO tender (id, name, description, service_type, status, version, responsible) VALUES ($1,$2,$3,$4,$5,$6,$7)`
 	result, err := t.db.QueryxContext(ctx, q, r.Id, r.Name, r.Description, r.ServiceType, r.Status, r.Version, r.Responsible)
 	if err != nil {

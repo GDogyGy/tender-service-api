@@ -5,29 +5,51 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"TenderServiceApi/internal/config"
-	bidsCreate "TenderServiceApi/internal/handlers/bids/create"
-	bidsFetch "TenderServiceApi/internal/handlers/bids/fetch"
-	tenderCreate "TenderServiceApi/internal/handlers/tender/create"
-	tenderFetch "TenderServiceApi/internal/handlers/tender/fetch"
-	tenderUpdate "TenderServiceApi/internal/handlers/tender/update"
+	bidsCreateGrpc "TenderServiceApi/internal/handlers/grpc/bids/create"
+	bidsFetchGrpc "TenderServiceApi/internal/handlers/grpc/bids/fetch"
+	bidsUpdateGrpc "TenderServiceApi/internal/handlers/grpc/bids/update"
+	tenderCreateGrpc "TenderServiceApi/internal/handlers/grpc/tender/create"
+	tenderFetchGrpc "TenderServiceApi/internal/handlers/grpc/tender/fetch"
+	tenderUpdateGrpc "TenderServiceApi/internal/handlers/grpc/tender/update"
+	bidsCreate "TenderServiceApi/internal/handlers/rest/bids/create"
+	bidsFetch "TenderServiceApi/internal/handlers/rest/bids/fetch"
+	bidsUpdate "TenderServiceApi/internal/handlers/rest/bids/update"
+	pingFetch "TenderServiceApi/internal/handlers/rest/ping/fetch"
+	prometheusFetch "TenderServiceApi/internal/handlers/rest/prometheus/fetch"
+	swaggerFetch "TenderServiceApi/internal/handlers/rest/swagger/fetch"
+	tenderCreate "TenderServiceApi/internal/handlers/rest/tender/create"
+	tenderFetch "TenderServiceApi/internal/handlers/rest/tender/fetch"
+	tenderUpdate "TenderServiceApi/internal/handlers/rest/tender/update"
+	"TenderServiceApi/internal/kafka"
+	"TenderServiceApi/internal/middleware/prometheusMiddleware"
+	bidDecisionRepository "TenderServiceApi/internal/repository/bid_decision"
+	bidFeedbackRepository "TenderServiceApi/internal/repository/bid_feedback"
 	bidsRepository "TenderServiceApi/internal/repository/bids"
-	"TenderServiceApi/internal/repository/organization"
+	organizationRepository "TenderServiceApi/internal/repository/organization"
 	tenderRepository "TenderServiceApi/internal/repository/tender"
 	"TenderServiceApi/internal/storage/postgres"
+	bidFeedbackUseCaseCreate "TenderServiceApi/internal/usecases/bid_feedback/create"
+	bidFeedbackUseCaseFetch "TenderServiceApi/internal/usecases/bid_feedback/fetch"
+	bidFeedbackUseCaseVerification "TenderServiceApi/internal/usecases/bid_feedback/verification"
 	bidsUseCaseCreate "TenderServiceApi/internal/usecases/bids/create"
+	bidsUseCaseDecision "TenderServiceApi/internal/usecases/bids/decision"
+	bidsUseCaseEdit "TenderServiceApi/internal/usecases/bids/edit"
 	bidsUseCaseFetch "TenderServiceApi/internal/usecases/bids/fetch"
 	bidsUseCaseVerify "TenderServiceApi/internal/usecases/bids/verification"
 	organizationUseCaseVerify "TenderServiceApi/internal/usecases/organization/verification"
 	tenderUseCaseCreate "TenderServiceApi/internal/usecases/tender/create"
-	tenderUseCaseEdite "TenderServiceApi/internal/usecases/tender/edite"
+	tenderUseCaseEdit "TenderServiceApi/internal/usecases/tender/edit"
 	tenderUseCaseFetch "TenderServiceApi/internal/usecases/tender/fetch"
 	tenderUseCaseVerify "TenderServiceApi/internal/usecases/tender/verification"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -43,7 +65,7 @@ func main() {
 		os.Exit(1) // nolint:gocritic
 	}
 
-	log.Info("Starting organizationResponsible api server", slog.String("Env", cfg.Env))
+	log.Info("Starting tender api server", slog.String("Env", cfg.Env))
 
 	storage, err := postgres.New(ctx, cfg.PostgresConn)
 	if err != nil {
@@ -52,29 +74,72 @@ func main() {
 	}
 
 	defer storage.Close()
-
+	// <! kafka init
+	producer, err := kafka.NewEventProducer(cfg.Kafka.GetAddresses(), cfg.Kafka.DefaultTopic)
+	if err != nil {
+		log.Error("Failed to init kafka", slog.Attr{Value: slog.StringValue(err.Error())})
+		os.Exit(1) // nolint:gocritic
+	}
+	defer func() { _ = producer.Close() }()
+	// kafka init !>
 	router := http.NewServeMux()
 
-	tenderRepository := tenderRepository.NewRepository(storage.Db)
-	bidsRepository := bidsRepository.NewRepository(storage.Db)
-	organizationRepository := organization.NewRepository(storage.Db)
+	// <! Repository
+	repositoryTender := tenderRepository.NewRepository(storage.Db)
+	repositoryBids := bidsRepository.NewRepository(storage.Db)
+	repositoryOrganization := organizationRepository.NewRepository(storage.Db)
+	repositoryBidFeedback := bidFeedbackRepository.NewRepository(storage.Db)
+	repositoryBidDecision := bidDecisionRepository.NewRepository(storage.Db)
+	// Repository !>
 
-	useCaseTenderVerify := tenderUseCaseVerify.NewService(tenderRepository)
-	useCaseBidsVerify := bidsUseCaseVerify.NewService(bidsRepository)
-	useCaseOrganizationVerify := organizationUseCaseVerify.NewService(organizationRepository)
-	useCaseTenderFetch := tenderUseCaseFetch.NewService(tenderRepository, useCaseTenderVerify)
-	useCaseTenderEdite := tenderUseCaseEdite.NewService(tenderRepository, useCaseTenderVerify)
-	tenderUseCaseCreate := tenderUseCaseCreate.NewService(tenderRepository, useCaseOrganizationVerify)
+	middlewarePrometheus := prometheusMiddleware.NewPrometheusMiddleware()
 
-	bidsUseCaseCreate := bidsUseCaseCreate.NewService(bidsRepository, useCaseOrganizationVerify)
-	bidsUseCaseFetch := bidsUseCaseFetch.NewService(bidsRepository, useCaseTenderVerify, useCaseBidsVerify)
+	useCaseOrganizationVerify := organizationUseCaseVerify.NewService(repositoryOrganization)
 
-	handlerTenderFetch := tenderFetch.NewHandler(log, useCaseTenderFetch)
-	handlerTenderCreate := tenderCreate.NewHandler(log, tenderUseCaseCreate)
-	handlerTenderUpdate := tenderUpdate.NewHandler(log, useCaseTenderEdite)
+	// <! useCase Tender
+	useCaseTenderVerify := tenderUseCaseVerify.NewService(repositoryTender)
+	useCaseTenderFetch := tenderUseCaseFetch.NewService(repositoryTender, useCaseTenderVerify)
+	useCaseTenderEdit := tenderUseCaseEdit.NewService(repositoryTender, useCaseTenderVerify)
+	UseCaseTenderCreate := tenderUseCaseCreate.NewService(repositoryTender, useCaseOrganizationVerify)
+	// useCase Tender !>
 
-	handlerBidsCreate := bidsCreate.NewHandler(log, bidsUseCaseCreate)
-	handlerBidsFetch := bidsFetch.NewHandler(log, bidsUseCaseFetch)
+	// <! useCase Bids
+	useCaseBidsCreate := bidsUseCaseCreate.NewService(repositoryBids, useCaseOrganizationVerify)
+	useCaseBidsVerify := bidsUseCaseVerify.NewService(repositoryBids)
+	useCaseBidsFetch := bidsUseCaseFetch.NewService(repositoryBids, repositoryBidFeedback, useCaseTenderVerify, useCaseBidsVerify)
+	useCaseBidsEdit := bidsUseCaseEdit.NewService(repositoryBids, useCaseBidsVerify)
+	useCaseBidsDecision := bidsUseCaseDecision.NewService(repositoryBids, repositoryBidDecision, repositoryTender, useCaseOrganizationVerify, useCaseTenderVerify)
+	// useCase Bids !>
+
+	// <! useCase Bids_Feedback
+	useCaseBidFeedbackVerification := bidFeedbackUseCaseVerification.NewService(repositoryBidFeedback)
+	useCaseBidFeedbackCreate := bidFeedbackUseCaseCreate.NewService(repositoryBidFeedback, repositoryOrganization, useCaseBidFeedbackVerification)
+	useCaseBidFeedbackFetch := bidFeedbackUseCaseFetch.NewService(repositoryBidFeedback, useCaseTenderVerify, useCaseOrganizationVerify)
+	// useCase Bids_Feedback !>
+
+	// <! Handler Tender
+	handlerTenderFetch := tenderFetch.NewHandler(log, middlewarePrometheus, useCaseTenderFetch)
+	handlerTenderCreate := tenderCreate.NewHandler(log, middlewarePrometheus, producer, UseCaseTenderCreate)
+	handlerTenderUpdate := tenderUpdate.NewHandler(log, middlewarePrometheus, producer, useCaseTenderEdit)
+	// Handler Tender !>
+
+	// <! Handler Bids
+	handlerBidsCreate := bidsCreate.NewHandler(log, middlewarePrometheus, producer, useCaseBidsCreate, useCaseBidFeedbackCreate)
+	handlerBidsFetch := bidsFetch.NewHandler(log, middlewarePrometheus, useCaseBidsFetch, useCaseBidFeedbackFetch)
+	handlerBidsUpdate := bidsUpdate.NewHandler(log, middlewarePrometheus, useCaseBidsEdit, useCaseBidsDecision)
+	// Handler Bids !>
+
+	// <! Handler Ping
+	handlerPingFetch := pingFetch.NewHandler()
+	// Handler Ping !>
+
+	// <! Handler Prometheus
+	handlePrometheusFetch := prometheusFetch.NewHandler()
+	// Handler Prometheus !>
+
+	// <! Handler Swagger
+	handlerSwaggerFetch := swaggerFetch.NewHandler()
+	// Handler Swagger !>
 
 	handlerTenderFetch.Register(router)
 	handlerTenderCreate.Register(router)
@@ -82,15 +147,46 @@ func main() {
 
 	handlerBidsCreate.Register(router)
 	handlerBidsFetch.Register(router)
+	handlerBidsUpdate.Register(router)
+	handlerPingFetch.Register(router)
+	handlePrometheusFetch.Register(router)
+	handlerSwaggerFetch.Register(router)
 
-	StartServer(ctx, cfg, log, router)
+	gRPCServer := grpc.NewServer()
+
+	// <! gRPC Handler Tender
+	tenderCreateGrpc.NewHandler(gRPCServer, log, UseCaseTenderCreate)
+	tenderFetchGrpc.NewHandler(gRPCServer, log, useCaseTenderFetch)
+	tenderUpdateGrpc.NewHandler(gRPCServer, log, useCaseTenderEdit)
+	// gRPC Handler Tender !>
+
+	// <! gRPC Handler Bids
+	bidsCreateGrpc.NewHandler(gRPCServer, log, useCaseBidsCreate, useCaseBidFeedbackCreate)
+	bidsFetchGrpc.NewHandler(gRPCServer, log, useCaseBidsFetch, useCaseBidFeedbackFetch)
+	bidsUpdateGrpc.NewHandler(gRPCServer, log, useCaseBidsEdit, useCaseBidsDecision)
+	// gRPC Handler Tender !>
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		StartServerHttp(ctx, cfg, log, router)
+		wg.Done()
+	}()
+
+	go func() {
+		StartServerGrpc(ctx, cfg, log, gRPCServer)
+		wg.Done()
+	}()
+
+	wg.Wait()
+	log.Info("All servers stopped")
 }
 
-func StartServer(ctx context.Context, cfg *config.Config, log *slog.Logger, router http.Handler) {
-	log.Info("server starting", slog.String("address", cfg.Address))
+func StartServerHttp(ctx context.Context, cfg *config.Config, log *slog.Logger, router http.Handler) {
+	log.Info("http server starting", slog.String("address", cfg.HTTPServer.Address))
 
 	srv := &http.Server{
-		Addr:         cfg.Address,
+		Addr:         cfg.HTTPServer.Address,
 		Handler:      router,
 		ReadTimeout:  cfg.Timeout,
 		WriteTimeout: cfg.Timeout,
@@ -98,18 +194,39 @@ func StartServer(ctx context.Context, cfg *config.Config, log *slog.Logger, rout
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("listen and serve returned err:", slog.Attr{Value: slog.StringValue(err.Error())})
+			log.Error("http listen and serve returned err:", slog.Attr{Value: slog.StringValue(err.Error())})
 		}
 	}()
 
 	<-ctx.Done()
 
-	log.Info("got interruption signal")
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Info("server shutdown returned an err: %v\n", slog.Attr{Value: slog.StringValue(err.Error())})
 	}
+	log.Info("http server stopping")
+}
 
-	log.Info("final")
+func StartServerGrpc(ctx context.Context, cfg *config.Config, log *slog.Logger, gRPCServer *grpc.Server) {
+	log.Info("grpc server starting", slog.String("address", cfg.GRPCServer.Address))
+
+	_ = cfg
+
+	lis, err := net.Listen("tcp", cfg.GRPCServer.Address)
+	if err != nil {
+		log.Error("gRPC listen error:", slog.String("error", err.Error()))
+		return
+	}
+
+	go func() {
+		if err := gRPCServer.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			log.Error("gRPC serve error:", slog.String("error", err.Error()))
+		}
+	}()
+
+	<-ctx.Done()
+
+	gRPCServer.GracefulStop()
+	log.Info("grpc server stopping")
 }
 
 func setupLogger(lvl string) (*slog.Logger, error) {

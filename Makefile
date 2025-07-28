@@ -9,7 +9,7 @@ run: linter
 linter:
 	golangci-lint run ./... --config=./.golangci.yaml
 testing:
-	go test ./... -coverprofile cover.out
+	go test -run TestHandlePing ./internal/handlers/rest/ping/fetch -count=1 && go test ./... -coverprofile cover.out -count=1
 
 test-coverage: testing
 	go tool cover -func cover.out | grep total | awk '{print $3}'
@@ -25,20 +25,24 @@ reset-migrate:
 
 .PHONY: intergration-run
 integration-run:
-	docker run --rm -d --name ${TEST_APP_NAME} -p 8081:8081 -e "CONFIG_PATH=config/local.yaml" -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest
-	sleep 5
-	docker run --rm -d --name ${TEST_CONTAINER_NAME} -p 5434:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest -d postgres:latest
-	sleep 5
+	# TODO: получается бинарник тестовой приложухи надо пересобирать через docker-compose чтобы тестить актуальное приложение -_-? и по другому не решить это
 	go clean -testcache
 	@echo "${BG_GREEN}Run each test integration${RESET}"
-	go test -tags=integration -parallel=1 ./test/handlers/create
-	go test -tags=integration -parallel=1 ./test/handlers/edit
-	go test -tags=integration -parallel=1 ./test/handlers/rollback
-	docker stop ${TEST_CONTAINER_NAME}
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/ping/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/create
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/tender/update
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/create
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/fetch
+	go test -tags=integration -parallel=1 ./integration_tests/handlers/bids/update
 
+swagger-build:
+	oapi-codegen -generate types -package transport -o ./internal/handlers/rest/types/transport/transport.go openapi.yaml
 
-app-test:
-	docker stop ${TEST_CONTAINER_NAME}
-	docker run --rm -d --name ${TEST_CONTAINER_NAME} -p 5434:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest -d postgres:latest
-	sleep 5
-	docker run --rm -d --name ${TEST_APP_NAME} -p 8081:8081 -e "CONFIG_PATH=config/local.yaml" -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=TenderApiTest
+proto-gen:
+	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/tender/proto_tender_service_create.proto
+	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/tender/proto_tender_service_fetch.proto
+	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/tender/proto_tender_service_update.proto
+	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/bids/proto_bids_service_create.proto
+	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/bids/proto_bids_service_fetch.proto
+	protoc --go_out=./internal/protos --go-grpc_out=./internal/protos ./internal/protos/proto/bids/proto_bids_service_update.proto
